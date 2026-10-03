@@ -2,8 +2,9 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './shell.css';
 
-const DEFAULT_TMDB_API_KEY = 'e39d09282fd73792b1e8110c4861ee7f';
-window.RH_TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY?.trim() || DEFAULT_TMDB_API_KEY;
+// TMDB credentials stay server-side. The Vercel /api/tmdb function reads TMDB_KEY.
+// Do not put the TMDB key in VITE_* variables because VITE values are bundled into browser code.
+window.RH_TMDB_API_KEY = '';
 
 const pages = new Set([
   'index','home','search','library','series','player','people','person','settings',
