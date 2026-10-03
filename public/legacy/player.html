@@ -9,18 +9,35 @@ function play(m){if(P){P.destroy();P=null}v.innerHTML='';const own=RH.get('rh_vi
 async function start(){
  try{
   if(!window.mv){throw new Error('Movie details are still loading.');}
-  const src=await RH.stream(window.mv);
-  if(src&&src.url){
-   const pg=RH.get('rh_prog',{})[id];let last=0;
-   if(P){P.destroy();P=null} v.innerHTML='';
-   P=RH.Player(v,{src:src.url,auto:1,start:pg&&pg.t&&pg.p<95?pg.t:0,onTime:(t,du)=>{if(Date.now()-last<3e3||!du||!window.mv)return;last=Date.now();const a=RH.get('rh_prog',{}),pc=t/du*100;a[id]={p:Math.round(pc),t,d:du};RH.set('rh_prog',a);if(pc>=92&&!RH.get('rh_seen',[]).some(x=>x.id==window.mv.id))RH.push('rh_seen',window.mv,500)}});
-   $('#pm').textContent='Now playing';scrollTo({top:0,behavior:'smooth'});return;
-  }
-  const providers=((window.mv['watch/providers']||{}).results||{})[RH.S().region]||{};
-  const links=[...(providers.link?[{name:'Open provider',url:providers.link}]:[]),...(providers.flatrate||[]).map(x=>({name:x.provider_name,url:providers.link}))].filter(x=>x.url);
-  const el=document.createElement('div');el.className='mod';
-  el.innerHTML='<div class="sh2"><h1>Where to watch</h1><p style="color:var(--mut);font-size:14px;line-height:1.5;margin-bottom:14px">No licensed stream source is configured for this title. Choose an available provider below, or connect a stream service you control in Settings.</p>'+(links.length?links.map(x=>'<a class="btn p" style="width:100%;margin-top:10px" target="_blank" rel="noopener" href="'+esc(x.url)+'">'+esc(x.name)+'</a>').join(''):'<div style="color:var(--mut);font-size:13px">No provider link is available for your region.</div>')+'<button class="lk" data-x>Cancel</button></div>';
-  document.body.append(el);el.onclick=e=>{if(e.target===el||e.target.dataset.x!=null)el.remove()};
+  const tmdbId=window.mv.id;
+  if(!tmdbId){throw new Error('This movie does not have a TMDB ID.');}
+  const pg=RH.get('rh_prog',{})[id];
+  if(P){P.destroy();P=null}
+  v.innerHTML='';
+  P=RH.Player(v,{
+   iframe:'https://vidsrc.sh/embed/movie/'+encodeURIComponent(tmdbId)+'?autoplay=1',
+   auto:1,
+   start:pg&&pg.t&&pg.p<95?pg.t:0,
+   onVidSrcEvent:(info,status,progress,duration)=>{
+    const key=info.imdb||info.tmdb||id;
+    const a=RH.get('rh_prog',{});
+    if(typeof progress==='number'){
+      const pc=duration?progress/duration*100:0;
+      a[key]={p:Math.round(pc),t:progress,d:duration||0};
+      if(key!==id)a[id]=a[key];
+      RH.set('rh_prog',a);
+      if(pc>=92&&!RH.get('rh_seen',[]).some(x=>x.id==window.mv.id))RH.push('rh_seen',window.mv,500);
+    }
+    if(status==='completed'){
+      const a2=RH.get('rh_prog',{});
+      a2[id]={p:100,t:duration||progress||0,d:duration||progress||0};
+      RH.set('rh_prog',a2);
+      if(!RH.get('rh_seen',[]).some(x=>x.id==window.mv.id))RH.push('rh_seen',window.mv,500);
+    }
+   }
+  });
+  $('#pm').textContent='Now playing';
+  scrollTo({top:0,behavior:'smooth'});
  }catch(e){RH.toast(e.message||'Could not start playback')}
 }
 (async()=>{try{const d=await RH.api('/movie/'+id,'&append_to_response=videos,similar,credits,watch/providers');
