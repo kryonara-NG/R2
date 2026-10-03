@@ -1,6 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "rm -rf .build && mkdir .build && unzip -q reelhouse-v8-react-vercel.zip -d .build && node prepare.cjs && cd .build && npm install && npm run build",
-  "outputDirectory": ".build/dist",
-  "cleanUrls": false
+  "rewrites": [{"source": "/(.*)", "destination": "/index.html"}]
 }

@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d0b09"><title>Reelhouse</title><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="shared.css"></head><body data-back="1" class="nn"><div style="position:sticky;top:0;z-index:5;background:#000"><header class="hd" style="background:#000;color:#fff;border:0"><button class="ib" onclick="RH.back()" aria-label="Back"><svg class="ic" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><b id="ht" style="font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw"></b><span style="flex:1"></span><button class="ib" id="sh" aria-label="Share"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 11 7.6-4M8.2 13l7.6 4"/></svg></button></header><div id="v" style="aspect-ratio:16/9;position:relative;background:#000"><div class="sk" style="position:absolute;inset:0;border-radius:0"></div></div></div><div id="b" style="padding:16px 18px"></div><script src="shared.js"></script><script>
+
+RH.guard();const id=new URLSearchParams(location.search).get('id'),v=$('#v'),b=$('#b');
+function state(h){v.innerHTML='<div style="position:absolute;inset:0;display:grid;place-items:center;color:#bbb;font-size:14px;text-align:center;padding:20px">'+h+'</div>'}
+let P=null;
+function play(m){if(P){P.destroy();P=null}v.innerHTML='';const own=RH.get('rh_videos',{})[id];
+ if(m==='movie'&&own){const pg=RH.get('rh_prog',{})[id];let last=0;P=RH.Player(v,{src:own,auto:1,start:pg&&pg.t&&pg.p<95?pg.t:0,onTime:(t,du)=>{if(Date.now()-last<3e3||!du||!window.mv)return;last=Date.now();const a=RH.get('rh_prog',{}),pc=t/du*100;a[id]={p:Math.round(pc),t,d:du};RH.set('rh_prog',a);if(pc>=92&&!RH.get('rh_seen',[]).some(x=>x.id==window.mv.id))RH.push('rh_seen',window.mv,500)}});return}
+ if(window.tk)P=RH.Player(v,{yt:window.tk,auto:RH.S().autoplay});else state('No trailer available for this title.')}
+async function start(){
+ try{
+  if(!window.mv){throw new Error('Movie details are still loading.');}
+  const src=await RH.stream(window.mv);
+  if(src&&src.url){
+   const pg=RH.get('rh_prog',{})[id];let last=0;
+   if(P){P.destroy();P=null} v.innerHTML='';
+   P=RH.Player(v,{src:src.url,auto:1,start:pg&&pg.t&&pg.p<95?pg.t:0,onTime:(t,du)=>{if(Date.now()-last<3e3||!du||!window.mv)return;last=Date.now();const a=RH.get('rh_prog',{}),pc=t/du*100;a[id]={p:Math.round(pc),t,d:du};RH.set('rh_prog',a);if(pc>=92&&!RH.get('rh_seen',[]).some(x=>x.id==window.mv.id))RH.push('rh_seen',window.mv,500)}});
+   $('#pm').textContent='Now playing';scrollTo({top:0,behavior:'smooth'});return;
+  }
+  const providers=((window.mv['watch/providers']||{}).results||{})[RH.S().region]||{};
+  const links=[...(providers.link?[{name:'Open provider',url:providers.link}]:[]),...(providers.flatrate||[]).map(x=>({name:x.provider_name,url:providers.link}))].filter(x=>x.url);
+  const el=document.createElement('div');el.className='mod';
+  el.innerHTML='<div class="sh2"><h1>Where to watch</h1><p style="color:var(--mut);font-size:14px;line-height:1.5;margin-bottom:14px">No licensed stream source is configured for this title. Choose an available provider below, or connect a stream service you control in Settings.</p>'+(links.length?links.map(x=>'<a class="btn p" style="width:100%;margin-top:10px" target="_blank" rel="noopener" href="'+esc(x.url)+'">'+esc(x.name)+'</a>').join(''):'<div style="color:var(--mut);font-size:13px">No provider link is available for your region.</div>')+'<button class="lk" data-x>Cancel</button></div>';
+  document.body.append(el);el.onclick=e=>{if(e.target===el||e.target.dataset.x!=null)el.remove()};
+ }catch(e){RH.toast(e.message||'Could not start playback')}
+}
+(async()=>{try{const d=await RH.api('/movie/'+id,'&append_to_response=videos,similar,credits,watch/providers');
+ if(d.release_date&&d.release_date>new Date().toISOString().slice(0,10))return location.replace('soon.html?id='+id);const vs=d.videos.results||[],tr=vs.find(x=>x.site==='YouTube'&&x.type==='Trailer')||vs.find(x=>x.site==='YouTube');window.tk=tr&&tr.key;window.mv=d;
+ const own=RH.get('rh_videos',{})[id],inList=()=>RH.get('rh_list',[]).some(x=>x.id===d.id),seen=()=>RH.get('rh_seen',[]).some(x=>x.id===d.id);
+ $('#ht').textContent=d.title;document.title=d.title;if(window.tk||own)RH.push('rh_hist',d);play('trailer');
+ const pr=((d['watch/providers']||{}).results||{})[RH.S().region]||{},pv=(pr.flatrate||[]).map(x=>x.provider_name).slice(0,5);
+ let rt=RH.get('rh_rate',{});const stars=()=>[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${(rt[id]||0)>=n?'on':''}" aria-label="${n} stars">&#9733;</button>`).join('');
+ const pg0=RH.prog(id).p||0;b.innerHTML='<button class="btn p" id="pm" style="width:100%;height:54px;border-radius:27px;font-size:17px;margin-bottom:16px">'+(own&&pg0>2&&pg0<95?'Resume watching - '+pg0+'%':'Start watching')+'</button><h1 style="font-size:24px">'+esc(d.title)+'</h1>'+(d.tagline?'<p style="color:var(--o);font-size:13px;margin-top:4px">'+esc(d.tagline)+'</p>':'')+'<p style="color:var(--mut);font-size:13.5px;margin:6px 0 14px">'+[(d.release_date||'').slice(0,4),d.runtime?d.runtime+' min':'',d.vote_average?d.vote_average.toFixed(1)+' rating':''].filter(Boolean).join('  |  ')+'</p><div class="chips" style="padding:0;margin-bottom:14px">'+(d.genres||[]).map(g=>'<a class="chip" href="genre.html?g='+g.id+'&n='+g.name+'">'+g.name+'</a>').join('')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="pt">Trailer</button><button class="btn" id="ls">'+(inList()?'In my list':'Add to list')+'</button><button class="btn" id="sn">'+(seen()?'Watched':'Mark watched')+'</button><button class="btn" id="dl">'+(RH.dl()[d.id]?'Downloaded':'Download')+'</button></div><h2 style="margin:18px 0 4px">Your rating</h2><div class="stars" id="st">'+stars()+'</div>'+(pv.length?'<h2 style="margin:14px 0 6px">Streaming on</h2><div class="chips" style="padding:0">'+pv.map(x=>'<span class="chip">'+esc(x)+'</span>').join('')+'</div>':'')+'<p style="line-height:1.6;font-size:14.5px;margin-top:16px;color:var(--mut)">'+esc(d.overview||'No description available.')+'</p>'
+ +'<h2 style="margin-left:0">Cast</h2><div class="row" style="margin:0 -18px">'+(d.credits.cast||[]).slice(0,16).map(c=>`<a class="pc" href="person.html?id=${c.id}">${c.profile_path?`<img loading="lazy" src="${RH.img(c.profile_path,'w185')}" alt="">`:'<div class="ph"></div>'}<p>${esc(c.name)}<span>${esc(c.character||'')}</span></p></a>`).join('')+'</div>'
+ +RH.row('More like this',d.similar.results.slice(0,12)).replace(/<h2>/,'<h2 style="margin-left:0">').replace('class="row"','class="row" style="margin:0 -18px"');
+ $('#pm').onclick=start;$('#pt').onclick=()=>play('trailer');
+ $('#sh').onclick=()=>RH.shareSheet(d);
+ $('#dl').onclick=async e=>{const b=e.target;if(b.disabled)return;b.disabled=true;await RH.download(d,b);b.textContent='Downloaded';b.disabled=false};
+ $('#st').onclick=e=>{const n=e.target.closest('button');if(!n)return;rt=RH.get('rh_rate',{});rt[id]=+n.dataset.n;RH.set('rh_rate',rt);$('#st').innerHTML=stars();RH.toast('Rated '+n.dataset.n+' of 5')};
+ $('#sn').onclick=()=>{const a=RH.get('rh_seen',[]);if(seen()){RH.set('rh_seen',a.filter(x=>x.id!==d.id));$('#sn').textContent='Mark watched'}else{RH.push('rh_seen',d,500);RH.setProg(d,100);RH.vib([10,30,10]);$('#sn').textContent='Watched';RH.toast('Marked as watched')}};
+ $('#ls').onclick=()=>{const a=RH.get('rh_list',[]);if(inList()){RH.set('rh_list',a.filter(x=>x.id!==d.id));$('#ls').textContent='Add to list';RH.toast('Removed from list')}else{RH.push('rh_list',d,200);$('#ls').textContent='In my list';RH.toast('Added to list')}};
+}catch(e){state('');b.innerHTML=RH.err(e.message)}})();
+</script></body></html>

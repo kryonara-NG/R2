@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d0b09"><title>Reelhouse</title><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="shared.css"></head><body><div class="pad"><h1>Search</h1><div style="margin-top:14px;display:flex;gap:10px;align-items:center"><div class="sb"><input class="in" id="q" placeholder="Movies, series, actors..." autocomplete="off"><button class="mic" id="mic" aria-label="Voice search" style="display:none">🎤</button></div><button class="fbtn" id="fb" aria-label="Filters"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></svg><span id="fc" class="bd" style="display:none"></span></button></div></div><div class="stabs"><button data-t="movie" class="on">Movies</button><button data-t="tv">Series</button><button data-t="person">Actors</button><button data-t="kw">Themes</button></div><div id="rec" style="padding:0 18px"></div><div id="res" style="padding:0 18px 100px"></div><script src="shared.js"></script><script>
+RH.guard();let t,tab='movie',pg=1,busy=0,more=null;
+const DF={genres:[],yf:'',yt:'',rating:'',sort:'',lang:'',rt:'',prov:'',votes:'',hide:false,hidel:false,actor:'',type:'movie'};
+let F={...DF,...RH.get('rh_filters',{})};const sv=()=>RH.set('rh_filters',F);
+const MOODS=[['😌 Cozy',{genres:[35,10749,10751],rating:'6.5'}],['🌀 Mind-bending',{genres:[878,9648,53],rating:'7'}],['😊 Feel-good',{genres:[35,10751,16],rating:'7'}],['😱 Edge of seat',{genres:[53,28,80],rating:'6.5'}],['🏰 Epic',{genres:[12,14,28],rating:'7',votes:'2000'}],['😭 Cry-worthy',{genres:[18,10749],rating:'7.5'}]];
+const LANG=[['','Any language'],['en','English'],['fr','French'],['es','Spanish'],['ko','Korean'],['ja','Japanese'],['hi','Hindi'],['yo','Yoruba'],['de','German'],['pt','Portuguese']];
+const SRT=[['','Most popular'],['vote_average.desc','Top rated'],['new','Newest'],['revenue.desc','Biggest box office']];
+const PRV=[['','Any service'],['mine','My streaming service'],['8','Netflix'],['9','Prime Video'],['337','Disney+'],['1899','Max'],['350','Apple TV+'],['15','Hulu']];
+const nAct=()=>(F.genres.length?1:0)+['yf','yt','rating','sort','lang','rt','prov','votes','actor'].filter(k=>F[k]).length+(F.hide?1:0)+(F.hidel?1:0);
+function badge(){const n=nAct();$('#fc').style.display=n?'':'none';$('#fc').textContent=n}
+const show=()=>$('#rec').style.display=$('#q').value.trim()?'none':'block';
+function recent(){const a=RH.get('rh_search',[]);$('#rec').innerHTML='<button class="btn p" id="dice" style="width:100%;height:48px;margin-bottom:8px">🎲 Surprise me with a random movie</button><details class="acc"><summary>Pick a mood</summary><div class="chips">'+MOODS.map((m,i)=>'<button class="chip" data-m="'+i+'">'+m[0]+'</button>').join('')+'</div></details>'+(a.length?'<details class="acc"><summary>Recent searches</summary><div class="chips">'+a.map(s=>'<button class="chip" data-s="'+esc(s)+'">'+esc(s)+'</button>').join('')+'</div><button class="lk" id="clr" style="margin-bottom:10px">Clear history</button></details>':'')}
+$('#rec').onclick=e=>{if(e.target.id==='dice')RH.surprise();else if(e.target.id==='clr'){RH.set('rh_search',[]);recent();RH.toast('Search history cleared')}else if(e.target.dataset.s){$('#q').value=e.target.dataset.s;run()}else if(e.target.dataset.m){F={...DF,...MOODS[e.target.dataset.m][1]};sv();badge();run();RH.toast(MOODS[e.target.dataset.m][0].slice(3)+' mood on')}};
+$('.stabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.t;$$('.stabs button').forEach(x=>x.classList.toggle('on',x===b));$('#q').placeholder=tab=='kw'?'A theme: time travel, heist, space...':'Movies, series, actors...';run()};
+const pc=p=>`<a class="pc" href="person.html?id=${p.id}" style="width:auto">${p.profile_path?`<img loading="lazy" src="${RH.img(p.profile_path,'w185')}" alt="" style="margin:auto">`:'<div class="ph" style="margin:auto"></div>'}<p>${esc(p.name)}<span>${esc(p.known_for_department||'')}</span></p></a>`;
+const yr=m=>+((m.release_date||m.first_air_date||'0').slice(0,4));
+function client(a){const seen=new Set(RH.get('rh_seen',[]).map(x=>x.id)),lst=new Set(RH.get('rh_list',[]).map(x=>x.id));return a.filter(m=>(!F.genres.length||(m.genre_ids||[]).some(g=>F.genres.includes(g)))&&(!F.yf||yr(m)>=+F.yf)&&(!F.yt||yr(m)<=+F.yt)&&(!F.rating||m.vote_average>=+F.rating)&&(!F.votes||m.vote_count>=+F.votes)&&(!F.lang||m.original_language==F.lang)&&!(F.hide&&seen.has(m.id))&&!(F.hidel&&lst.has(m.id)))}
+async function disc(type,extra=''){const tv=type=='tv',k=tv?['first_air_date.gte','first_air_date.lte']:['primary_release_date.gte','primary_release_date.lte'];
+ let s=F.sort=='new'?(tv?'first_air_date.desc':'primary_release_date.desc'):F.sort=='revenue.desc'&&tv?'popularity.desc':(F.sort||'popularity.desc'),q='&sort_by='+s+'&page='+pg;
+ if(s.startsWith('primary_release_date.desc')||s.startsWith('first_air'))q+='&'+k[1]+'='+new Date().toISOString().slice(0,10);
+ if(F.yf)q+='&'+k[0]+'='+F.yf+'-01-01';if(F.yt)q+='&'+k[1]+'='+F.yt+'-12-31';if(F.rating)q+='&vote_average.gte='+F.rating;
+ q+='&vote_count.gte='+(F.votes||(s.startsWith('vote_average')?300:(s.startsWith('primary_release_date.desc')||s.startsWith('first_air')?20:0)));
+ if(F.genres.length)q+='&with_genres='+F.genres.join('|');if(F.lang)q+='&with_original_language='+F.lang;if(F.rt)q+='&with_runtime.lte='+F.rt;
+ const pv=F.prov=='mine'?RH.S().svc:F.prov;if(pv)q+='&with_watch_providers='+pv+'&watch_region='+RH.S().region;
+ if(F.actor&&!tv){const p=await RH.api('/search/person','&query='+encodeURIComponent(F.actor));if(p.results[0])q+='&with_cast='+p.results[0].id}
+ return RH.api('/discover/'+type,q+extra)}
+async function run(reset=true){const q=$('#q').value.trim(),r=$('#res');show();if(reset)pg=1;if(busy)return;
+ if(tab=='person'){if(!q){try{const d=await RH.api('/trending/person/week');r.innerHTML='<h2>Trending actors</h2><div class="row">'+d.results.slice(0,14).map(p=>pc(p).replace('width:auto','')).join('')+'</div>'}catch{}return}
+  try{const d=await RH.api('/search/person','&query='+encodeURIComponent(q));r.innerHTML=d.results.length?'<div class="grid">'+d.results.map(pc).join('')+'</div>':'<div class="state"><b>No results</b>Try another name.</div>'}catch(e){r.innerHTML=RH.err(e.message)}return}
+ const fa=nAct()>0;
+ if(!q&&!fa&&tab!='kw'){r.innerHTML='<details class="acc"><summary>Browse by genre</summary><div class="chips">'+RH.G.map(g=>'<a class="chip" href="genre.html?g='+g[0]+'&n='+g[1]+'">'+g[1]+'</a>').join('')+'</div></details><div id="tp"></div>';try{const d=await RH.api('/trending/person/week');$('#tp').innerHTML='<h2>Trending actors</h2><div class="row">'+d.results.slice(0,14).map(p=>pc(p).replace('width:auto','')).join('')+'</div>'}catch{}return}
+ if(tab=='kw'&&!q){r.innerHTML='<div class="state"><b>Search by theme</b>Type an idea like "time loop", "heist" or "road trip" and pick movies or series in Filters.</div>';return}
+ if(reset)r.innerHTML='<div class="grid">'+RH.sk(9)+'</div>';busy=1;
+ try{let d,ty=tab=='kw'?F.type:tab;
+  if(tab=='kw'){const k=await RH.api('/search/keyword','&query='+encodeURIComponent(q));if(!k.results.length){busy=0;return r.innerHTML='<div class="state"><b>No theme found</b>Try a simpler word.</div>'}d=await disc(ty,'&with_keywords='+k.results.slice(0,3).map(x=>x.id).join('|'))}
+  else if(q){d=await RH.api('/search/'+tab,'&query='+encodeURIComponent(q)+'&page='+pg);RH.set('rh_search',[q,...RH.get('rh_search',[]).filter(x=>x!==q)].slice(0,8))}
+  else d=await disc(tab);
+  const res=(q&&tab!='kw'?client(d.results):client(d.results.map(x=>x)));more=pg<d.total_pages;
+  const h=res.map(RH.card).join('');if(reset)r.innerHTML=res.length?'<div class="grid" id="gr"></div>':'<div class="state"><b>No matches</b>Loosen a filter or try another word.<br><br><button class="btn" id="rf">Reset filters</button></div>';
+  if(res.length)$('#gr').insertAdjacentHTML('beforeend',h);$('#lm')&&$('#lm').remove();if(more&&res.length)r.insertAdjacentHTML('beforeend','<button class="btn" id="lm" style="margin:16px auto;display:block">Load more</button>')}
+ catch(e){r.innerHTML=RH.err(e.message)}busy=0}
+$('#res').onclick=e=>{if(e.target.id=='lm'){pg++;run(false)}else if(e.target.id=='rf'){F={...DF};sv();badge();run()}};
+$('#q').oninput=()=>{clearTimeout(t);t=setTimeout(run,400)};
+/* filter sheet */
+$('#fb').onclick=()=>{const el=document.createElement('div');el.className='mod';const sel=(k,o)=>`<select class="sel" data-k="${k}" style="width:100%;height:44px">${o.map(x=>`<option value="${x[0]}" ${F[k]==x[0]?'selected':''}>${x[1]}</option>`).join('')}</select>`,yrs=[['','Any']].concat(Array.from({length:60},(_,i)=>[2026-i,2026-i])),lab=t=>`<div style="font:700 12px var(--body);color:var(--mut);margin:14px 0 6px">${t}</div>`,sw=(k,t)=>`<label class="rw" style="padding:10px 0"><span>${t}</span><input type="checkbox" class="sw" data-k="${k}" ${F[k]?'checked':''}></label>`;
+ el.innerHTML=`<div class="sh2"><h1>Filters</h1><p style="font-size:12px;color:var(--mut)">Streaming, runtime, actor and sort apply when the search box is empty, or on the Keyword tab.</p>${lab('Genres')}<div class="chips" id="gg" style="padding:0">${RH.G.map(g=>`<button class="chip${F.genres.includes(g[0])?' on':''}" data-g="${g[0]}" style="${F.genres.includes(g[0])?'background:var(--o);color:#fff':''}">${g[1]}</button>`).join('')}</div>
+ <div style="display:flex;gap:10px"><div style="flex:1">${lab('Year from')}${sel('yf',yrs)}</div><div style="flex:1">${lab('Year to')}${sel('yt',yrs)}</div></div>
+ <div style="display:flex;gap:10px"><div style="flex:1">${lab('Minimum rating')}${sel('rating',[['','Any'],['5','5+'],['6','6+'],['7','7+'],['8','8+']])}</div><div style="flex:1">${lab('Minimum votes')}${sel('votes',[['','Any'],['100','100+'],['1000','1,000+'],['5000','5,000+']])}</div></div>
+ ${lab('Sort by')}${sel('sort',SRT)}${lab('Original language')}${sel('lang',LANG)}${lab('Max runtime')}${sel('rt',[['','Any length'],['90','Under 90 min'],['120','Under 2 hours'],['150','Under 2.5 hours']])}${lab('Available on')}${sel('prov',PRV)}
+ ${lab('With actor')}<input class="in" data-k="actor" value="${esc(F.actor)}" placeholder="e.g. Idris Elba">${lab('Keyword tab: show')}${sel('type',[['movie','Movies'],['tv','Series']])}
+ ${sw('hide','Hide titles I have watched')}${sw('hidel','Hide titles already in my list')}
+ <div style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="rs" style="flex:1">Reset</button><button class="btn p" id="ap" style="flex:2">Show results</button></div></div>`;document.body.append(el);
+ el.onclick=e=>{if(e.target===el)el.remove();const g=e.target.closest('[data-g]');if(g){const id=+g.dataset.g,i=F.genres.indexOf(id);i<0?F.genres.push(id):F.genres.splice(i,1);const on=i<0;g.style.background=on?'var(--o)':'';g.style.color=on?'#fff':''}
+  if(e.target.id=='rs'){F={...DF};sv();badge();el.remove();run()}if(e.target.id=='ap'){el.querySelectorAll('select[data-k],input.in[data-k]').forEach(x=>F[x.dataset.k]=x.value);el.querySelectorAll('input.sw').forEach(x=>F[x.dataset.k]=x.checked);sv();badge();el.remove();run()}}};
+/* voice search */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){$('#mic').style.display='';$('#mic').onclick=()=>{const r=new SR();r.lang=RH.S().lang;r.onresult=e=>{$('#q').value=e.results[0][0].transcript;run()};r.onerror=()=>RH.toast('Could not hear you');r.onstart=()=>RH.toast('Listening...');try{r.start()}catch{}}}
+recent();badge();run();RH.nav(1);
+</script></body></html>
