@@ -28,24 +28,22 @@ setInterval(tick,1e3);
 host.onclick=e=>{const b=e.target.closest('.bell');if(!b)return;const on=RH.toggleRem(M[b.dataset.id]);b.classList.toggle('on',on)};
 let n=0,busy=0,hero;
 async function more(){
- if(busy)return;
+ if(busy||n>=30)return;
  busy=1;
  try{
-  for(let j=0;j<2;j++){
-   const s=sec(n++),d=await RH.api(s.p,s.q);
-   const results=Array.isArray(d.results)?d.results:[];
-   host.insertAdjacentHTML('beforeend',s.soon?soon(results):s.rank?`<h2>${s.t}</h2><div class="row">${results.slice(0,10).map((m,k)=>RH.rank(m,k+1)).join('')}</div>`:RH.row(s.t,results));
-   tick();
-  }
+  const s=sec(n++),d=await RH.api(s.p,s.q);
+  const results=Array.isArray(d.results)?d.results:[];
+  host.insertAdjacentHTML('beforeend',s.soon?soon(results):s.rank?`<h2>${s.t}</h2><div class="row">${results.slice(0,10).map((m,k)=>RH.rank(m,k+1)).join('')}</div>`:RH.row(s.t,results));
+  tick();
   $('#sen').textContent='Scroll for more';
  }catch(e){
+  n=Math.max(0,n-1);
   $('#sen').innerHTML='<button class="btn" id="retry-home" style="margin:auto">Retry</button>';
   $('#retry-home').onclick=()=>{ $('#sen').textContent='Loading more...'; more(); };
   RH.toast(e.message||'Could not load Reelhouse.');
  }finally{
   busy=0;
  }
- if($('#sen').getBoundingClientRect().top<innerHeight+500 && n<30)more();
 }
 (async()=>{try{const t=await RH.api('/trending/movie/week');hero=t.results;const h=hero[0],cont=RH.get('rh_hist',[]);
  app.innerHTML='<div class="hero" style="background-image:url('+RH.img(h.backdrop_path,'w780')+')"><div><h1>'+esc(h.title)+'</h1><p style="color:#eee;font-size:13px;margin:6px 0 12px">'+esc((h.overview||'').slice(0,110))+'...</p><a class="btn p" href="player.html?id='+h.id+'">Watch trailer</a> <button class="btn" id="sp" style="color:#fff;border-color:#fff8">Surprise me</button></div></div><div class="chips" style="margin-top:14px;overflow-x:auto;flex-wrap:nowrap">'+G.map(g=>'<a class="chip" style="flex:none" href="genre.html?g='+g[0]+'&n='+g[1]+'">'+g[1]+'</a>').join('')+'</div>'+RH.row('Continue watching',cont);
