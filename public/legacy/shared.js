@@ -152,7 +152,31 @@ RH.Player=function(box,o={}){
  box.innerHTML=`<div class="npm"></div><div class="npt"></div><div class="npc on"><div class="npa"><button data-a="b" aria-label="Back 10 seconds">${ic('b')}</button><button data-a="p" class="big" aria-label="Play or pause"></button><button data-a="f" aria-label="Forward 10 seconds">${ic('f')}</button></div><div class="npr"><button data-a="t" class="sp">Sleep</button><button data-a="s" class="sp">1x</button><button data-a="m"></button></div><div class="npb"><span class="t1">0:00</span><input type="range" min="0" max="1000" value="0" aria-label="Seek"><span class="t2">0:00</span><button data-a="z" aria-label="Fullscreen">${ic('fs')}</button></div><i class="nfl l"></i><i class="nfl r"></i></div>`;
  const m=$('.npm',box),c=$('.npc',box),rg=$('input',box),pb=$('[data-a=p]',box),mb=$('[data-a=m]',box);let A={},ready=0,sp0=0,slt=0,st,drag=0,tm,ended=0,ps=[1,1.25,1.5,2,.75],pi=0,muted=!!o.mute,dead=0;
  const R=()=>{try{return A.ok&&A.ok()}catch{return 0}};
- if(o.yt){const load=()=>new Promise(r=>{if(window.YT&&YT.Player)return r();const p=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{p&&p();r()};if(!document.getElementById('yta')){const s=document.createElement('script');s.id='yta';s.src='https://www.youtube.com/iframe_api';document.head.append(s)}});
+ if(o.iframe){
+  const fr=document.createElement('iframe');
+  fr.src=o.iframe;
+  fr.allow='autoplay; fullscreen; picture-in-picture; encrypted-media';
+  fr.allowFullscreen=true;
+  fr.referrerPolicy='origin';
+  m.append(fr);
+  ready=1;
+  const onMessage=e=>{
+   if(!e.data||e.data.type!=='PLAYER_EVENT'||!e.data.data)return;
+   const d=e.data.data,info=d.player_info||{},status=d.player_status,progress=d.player_progress,duration=d.player_duration;
+   if(typeof o.onVidSrcEvent==='function')o.onVidSrcEvent(info,status,progress,duration);
+   if(status==='completed')ended=1;
+   ui();
+  };
+  addEventListener('message',onMessage);
+  A={
+   ok:()=>1,
+   play:()=>{try{fr.contentWindow.postMessage({type:'PLAYER_COMMAND',action:'play'},'*')}catch{}},
+   pause:()=>{try{fr.contentWindow.postMessage({type:'PLAYER_COMMAND',action:'pause'},'*')}catch{}},
+   seek:t=>{try{fr.contentWindow.postMessage({type:'PLAYER_COMMAND',action:'seek',time:t},'*')}catch{}},
+   cur:()=>0,dur:()=>0,mute:x=>{},rate:r=>{},playing:()=>false
+  };
+  box.classList.add('vidsrc-iframe');
+ }elseif(o.yt){const load=()=>new Promise(r=>{if(window.YT&&YT.Player)return r();const p=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{p&&p();r()};if(!document.getElementById('yta')){const s=document.createElement('script');s.id='yta';s.src='https://www.youtube.com/iframe_api';document.head.append(s)}});
   let y;A={ok:()=>y&&y.playVideo&&ready,play:()=>{ended=0;y.playVideo()},pause:()=>y.pauseVideo(),seek:t=>y.seekTo(t,true),cur:()=>y.getCurrentTime(),dur:()=>y.getDuration(),mute:x=>x?y.mute():y.unMute(),rate:r=>y.setPlaybackRate(r),playing:()=>y.getPlayerState()==1||y.getPlayerState()==3};
   load().then(()=>{if(dead)return;const d=document.createElement('div');m.append(d);y=new YT.Player(d,{videoId:o.yt,playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0,iv_load_policy:3,fs:0,playsinline:1,autoplay:o.auto?1:0,mute:o.mute?1:0,cc_load_policy:0,origin:location.origin},events:{onReady:()=>{ready=1;if(o.start)y.seekTo(o.start,true);if(o.mute)y.mute()},onStateChange:e=>{if(e.data===0){y.seekTo(0,true);y.pauseVideo();ended=1;o.onEnd&&o.onEnd();ui()}}}})})}
  else{const v=document.createElement('video');v.playsInline=true;v.preload='metadata';v.src=o.src;v.muted=muted;if(o.auto)v.autoplay=true;m.append(v);ready=1;
