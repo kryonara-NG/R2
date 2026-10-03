@@ -2,7 +2,8 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './shell.css';
 
-window.RH_TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY?.trim() || '';
+const DEFAULT_TMDB_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlMzlkMDkyODJmZDczNzkyYjFlODExMGM0ODYxZWU3ZiIsIm5iZiI6MTc3MjUzMDEwMi4zMzQsInN1YiI6IjY5YTZhOWI2ZDEzMmNjNDljNDc0M2NkNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.WZUJBxPNla8A0xn9kuJCAm8INNOWn1BxQnS5TWeeqEc';
+window.RH_TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY?.trim() || DEFAULT_TMDB_API_KEY;
 
 const pages = new Set([
   'index','home','search','library','series','player','people','person','settings',
