@@ -286,8 +286,24 @@ $('#e-go').onclick = (e) => busy(e.currentTarget, async () => {
   const email = norm($('#e-email').value);
   if (!validEmail(email)) return fail('#e-msg', 'Enter a valid email address.', $('#e-email'));
   state.email = email;
-  if (await api.exists(email)) { $('#l-who').textContent = email; $('#l-pw').value = ''; go('login'); }
-  else { $('#s-who').textContent = `Setting up ${email}`; go('signup'); }
+  try {
+    if (await api.exists(email)) {
+      $('#l-who').textContent = email;
+      $('#l-pw').value = '';
+      go('login');
+    } else {
+      $('#s-who').textContent = `Setting up ${email}`;
+      go('signup');
+    }
+  } catch (err) {
+    // The server-side existence check is only a convenience. Never trap the user
+    // on the email step when that optional lookup is unavailable.
+    $('#l-who').textContent = email;
+    $('#l-pw').value = '';
+    $('#e-msg').style.color = 'var(--mut)';
+    $('#e-msg').textContent = 'Account check is temporarily unavailable. Choose Sign in below if you already have an account, or create a new one.';
+    go('login');
+  }
 });
 $('#l-go').onclick = (e) => busy(e.currentTarget, async () => {
   const pw = $('#l-pw').value; if (!pw) return fail('#l-msg', 'Enter your password.', $('#l-pw'));
