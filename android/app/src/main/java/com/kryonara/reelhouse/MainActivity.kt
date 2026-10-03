@@ -4,7 +4,9 @@ import android.Manifest
 import android.app.DownloadManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -23,6 +25,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.PendingIntentCompat
 import androidx.core.content.ContextCompat
 import java.util.UUID
 import kotlin.math.sqrt
@@ -119,11 +122,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             if (Build.VERSION.SDK_INT >= 33 &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) return
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pending = PendingIntentCompat.getActivity(
+                context, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                false
+            )
             val n = NotificationCompat.Builder(context, channelId)
                 .setSmallIcon(com.kryonara.reelhouse.R.drawable.ic_reelhouse_notification)
                 .setContentTitle(title)
                 .setContentText(body)
+                .setContentIntent(pending)
                 .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .build()
             (context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
                 .notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), n)
