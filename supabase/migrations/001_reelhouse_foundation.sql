@@ -1,8 +1,10 @@
--- Reelhouse / R2 Supabase foundation
--- Apply this migration in Supabase SQL Editor once the project is connected.
--- Auth provider: email/password only for now. Keep Google disabled in Auth Providers.
+-- R2 / Reelhouse production foundation
+-- Email/password Auth only. Keep Google/OAuth providers disabled unless explicitly added later.
 
 create extension if not exists pgcrypto;
+
+-- Remove an unrelated/unsafe public helper if it exists.
+revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -41,9 +43,7 @@ create table if not exists public.preference_events (
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
-create index if not exists preference_events_user_time_idx
-  on public.preference_events(user_id, created_at desc);
+create index if not exists preference_events_user_time_idx on public.preference_events(user_id, created_at desc);
 
 create table if not exists public.followed_people (
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -67,6 +67,7 @@ create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
 security invoker
+set search_path = public
 as $$
 begin
   new.updated_at = now();
@@ -79,12 +80,11 @@ create trigger profiles_touch_updated_at
 before update on public.profiles
 for each row execute function public.touch_updated_at();
 
--- Hard server-side limit: at most 3 active device installations per user.
 create or replace function public.enforce_three_devices()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   active_count integer;
@@ -97,7 +97,7 @@ begin
   from public.user_devices
   where user_id = new.user_id
     and revoked_at is null
-    and id <> coalesce(new.id, '00000000-0000-0000-0000-000000000000'::uuid);
+    and id <> new.id;
 
   if active_count >= 3 then
     raise exception 'DEVICE_LIMIT_REACHED';
@@ -107,42 +107,21 @@ begin
 end;
 $$;
 
-drop trigger if exists enforce_three_devices_trigger on public.user_devices;
-create trigger enforce_three_devices_trigger
+drop trigger if exists enforce_three_devices_insert_trigger on public.user_devices;
+create trigger enforce_three_devices_insert_trigger
 before insert on public.user_devices
 for each row execute function public.enforce_three_devices();
 
-alter table public.profiles enable row level security;
-alter table public.user_devices enable row level security;
-alter table public.preference_events enable row level security;
-alter table public.followed_people enable row level security;
-alter table public.watch_state enable row level security;
-
-drop policy if exists profiles_self on public.profiles;
-create policy profiles_self on public.profiles
-for all using (auth.uid() = id) with check (auth.uid() = id);
-
-drop policy if exists devices_self on public.user_devices;
-create policy devices_self on public.user_devices
-for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists preference_events_self on public.preference_events;
-create policy preference_events_self on public.preference_events
-for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists followed_people_self on public.followed_people;
-create policy followed_people_self on public.followed_people
-for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists watch_state_self on public.watch_state;
-create policy watch_state_self on public.watch_state
-for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop trigger if exists enforce_three_devices_update_trigger on public.user_devices;
+create trigger enforce_three_devices_update_trigger
+before update of user_id, revoked_at on public.user_devices
+for each row execute function public.enforce_three_devices();
 
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 begin
   insert into public.profiles(id, display_name)
@@ -159,3 +138,46 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
+
+alter table public.profiles enable row level security;
+alter table public.user_devices enable row level security;
+alter table public.preference_events enable row level security;
+alter table public.followed_people enable row level security;
+alter table public.watch_state enable row level security;
+
+drop policy if exists profiles_self on public.profiles;
+create policy profiles_self on public.profiles
+for all to authenticated
+using ((select auth.uid()) = id)
+with check ((select auth.uid()) = id);
+
+drop policy if exists devices_self on public.user_devices;
+create policy devices_self on public.user_devices
+for all to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists preference_events_self on public.preference_events;
+create policy preference_events_self on public.preference_events
+for all to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists followed_people_self on public.followed_people;
+create policy followed_people_self on public.followed_people
+for all to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists watch_state_self on public.watch_state;
+create policy watch_state_self on public.watch_state
+for all to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+revoke all on table public.profiles, public.user_devices, public.preference_events, public.followed_people, public.watch_state from anon;
+grant select, insert, update, delete on public.profiles, public.user_devices, public.preference_events, public.followed_people, public.watch_state to authenticated;
+
+revoke execute on function public.touch_updated_at() from public, anon, authenticated;
+revoke execute on function public.enforce_three_devices() from public, anon, authenticated;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
