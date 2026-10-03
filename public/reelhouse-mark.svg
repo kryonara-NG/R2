@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="bg" x1="70" y1="30" x2="450" y2="480" gradientUnits="userSpaceOnUse"><stop stop-color="#24201d"/><stop offset=".5" stop-color="#090909"/><stop offset="1" stop-color="#000"/></linearGradient>
+ <linearGradient id="metal" x1="120" y1="80" x2="390" y2="430" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset=".3" stop-color="#bcbcbc"/><stop offset=".65" stop-color="#666"/><stop offset="1" stop-color="#242424"/></linearGradient>
+ <linearGradient id="edge" x1="150" y1="100" x2="410" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="#ffcf9b"/><stop offset=".45" stop-color="#ff6a1a"/><stop offset="1" stop-color="#7b2500"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16"/></filter>
+</defs>
+<rect x="16" y="16" width="480" height="480" rx="118" fill="url(#bg)"/>
+<ellipse cx="264" cy="414" rx="145" ry="30" fill="#000" opacity=".7" filter="url(#shadow)"/>
+<!-- dimensional folded entertainment mark: deliberately not a play button -->
+<path d="M146 118 318 72 405 133 405 350 344 405 145 355Z" fill="#050505" stroke="#343434" stroke-width="5"/>
+<path d="M146 118 318 72 318 154 146 202Z" fill="#4a4a4a"/>
+<path d="m318 72 87 61-61 52-26-31Z" fill="url(#edge)"/>
+<path d="M146 202 318 154 405 207 405 350 344 405 145 355Z" fill="url(#metal)"/>
+<path d="M178 228 286 198 340 232 340 299 301 332 178 302Z" fill="#111"/>
+<path d="m202 265 58-17 34 20-34 48-58-15Z" fill="none" stroke="url(#edge)" stroke-width="13" stroke-linejoin="round"/>
+<circle cx="361" cy="170" r="13" fill="#fff" opacity=".9"/>
+<path d="m361 139 5 24 19 8-19 8-5 25-5-25-19-8 19-8Z" fill="#fff" opacity=".85"/>
+<path d="M146 355 344 405 405 350 344 430 146 381Z" fill="#171717" opacity=".9"/>
+</svg>
