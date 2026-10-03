@@ -208,7 +208,40 @@ const demo = {
     store.set('rh_users', users);
   }
 };
-const api = CONFIG.adapter || demo;
+const SUPABASE_URL = (window.parent && window.parent.RH_SUPABASE_URL) || '';
+const SUPABASE_KEY = (window.parent && window.parent.RH_SUPABASE_PUBLISHABLE_KEY) || '';
+
+async function supabaseRequest(path, options = {}) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Authentication service is not configured.');
+  const headers = { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const res = await fetch(SUPABASE_URL + path, { ...options, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.msg || data.message || data.error_description || data.error || 'Authentication request failed.');
+  return data;
+}
+
+const supabaseAdapter = (SUPABASE_URL && SUPABASE_KEY) ? {
+  exists: async (email) => {
+    const res = await fetch('/api/auth/lookup?email=' + encodeURIComponent(email), { headers: { Accept: 'application/json' } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not check this email right now.');
+    return data.exists === true;
+  },
+  signUp: async ({ email, name, password }) => {
+    const data = await supabaseRequest('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ email, password, data: { display_name: name, name } }) });
+    const user = data.user || {};
+    if (!data.session) throw new Error('Account created. Check your email to confirm your account before signing in.');
+    return { id:user.id, name:name||user.user_metadata?.display_name||user.user_metadata?.name||'', email:user.email||email, provider:'email', access_token:data.session.access_token, refresh_token:data.session.refresh_token };
+  },
+  signIn: async ({ email, password }) => {
+    const data = await supabaseRequest('/auth/v1/token?grant_type=password', { method:'POST', body:JSON.stringify({email,password}) });
+    const user=data.user||{};
+    return { id:user.id, name:user.user_metadata?.display_name||user.user_metadata?.name||'', email:user.email||email, provider:'email', access_token:data.access_token, refresh_token:data.refresh_token };
+  },
+  reset: async ({ email }) => supabaseRequest('/auth/v1/recover', { method:'POST', body:JSON.stringify({email,redirect_to:location.origin+'/index.html'}) })
+} : null;
+
+const api = supabaseAdapter || CONFIG.adapter || demo;
 
 /* ========= UI ========= */
 const $ = (s, r = document) => r.querySelector(s);
@@ -278,9 +311,13 @@ $('#s-go').onclick = (e) => busy(e.currentTarget, async () => {
 
 /* Forgot password (demo resets directly; with a real backend this sends an email link) */
 $('#f-go').onclick = (e) => busy(e.currentTarget, async () => {
-  const pw = $('#f-pw').value; if (pw.length < 8) return fail('#f-msg', 'Use at least 8 characters.', $('#f-pw'));
-  try { await api.reset({ email: state.email, password: pw }); $('#l-pw').value = ''; go('login'); $('#l-msg').style.color = 'var(--mut)'; $('#l-msg').textContent = 'Password updated. Sign in with your new password.'; }
-  catch (err) { fail('#f-msg', err.message); }
+  if (api === supabaseAdapter) {
+    try { await api.reset({ email: state.email }); go('login'); $('#l-msg').style.color = 'var(--mut)'; $('#l-msg').textContent = 'If that email has an account, a password-reset email has been sent.'; }
+    catch (err) { fail('#f-msg', err.message); }
+    return;
+  }
+  const pw=$('#f-pw').value; if(pw.length<8)return fail('#f-msg','Use at least 8 characters.',$('#f-pw'));
+  try{await api.reset({email:state.email,password:pw});$('#l-pw').value='';go('login');$('#l-msg').style.color='var(--mut)';$('#l-msg').textContent='Password updated. Sign in with your new password.'}catch(err){fail('#f-msg',err.message)}
 });
 
 $('#d-go').onclick = () => CONFIG.onAuth(state.user);
