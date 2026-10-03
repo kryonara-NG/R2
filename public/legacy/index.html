@@ -75,20 +75,8 @@ a,.lnk{color:var(--o);font-weight:600;text-decoration:none;cursor:pointer;backgr
     <section class="step on" data-s="home">
       <h1>Welcome to Reelhouse</h1>
       <p class="sub">Sign in to save your watchlist, favorites and pick up where you left off.</p>
-      <button class="btn p" data-go="google"><svg viewBox="0 0 24 24"><path fill="#fff" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#fff" opacity=".85" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.600-4.100H3.100v2.600A10 10 0 0 0 12 22z"/><path fill="#fff" opacity=".7" d="M6.400 13.900a6 6 0 0 1 0-3.800V7.500H3.100a10 10 0 0 0 0 9z"/><path fill="#fff" opacity=".6" d="M12 6c1.500 0 2.800.5 3.800 1.500l2.900-2.900A10 10 0 0 0 3.100 7.500l3.300 2.600C7.200 7.800 9.400 6 12 6z"/></svg>Continue with Google</button>
-      <button class="btn" data-go="email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>Continue with email</button>
+      <button class="btn p" data-go="email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>Continue with email</button>
       <p class="legal">By continuing you agree to our <button class="lnk" data-doc="terms">Terms of Service</button> and <button class="lnk" data-doc="privacy">Privacy Policy</button>.</p>
-    </section>
-
-    <!-- GOOGLE (demo account chooser; swap handler in CONFIG) -->
-    <section class="step" data-s="google">
-      <button class="back" data-go="home">&#8592; Back</button>
-      <h1>Choose your Google account</h1>
-      <p class="sub">Enter the Google email you want to use with Reelhouse.</p>
-      <label for="g-email">Google email</label>
-      <input id="g-email" type="email" inputmode="email" autocomplete="email" placeholder="you@gmail.com">
-      <div class="msg" id="g-msg"></div>
-      <button class="btn p" id="g-go">Continue</button>
     </section>
 
     <!-- EMAIL -->
@@ -127,17 +115,6 @@ a,.lnk{color:var(--o);font-weight:600;text-decoration:none;cursor:pointer;backgr
       <label class="chk"><input type="checkbox" id="s-terms"><span>I agree to the <button class="lnk" data-doc="terms" type="button">Terms of Service</button> and <button class="lnk" data-doc="privacy" type="button">Privacy Policy</button>.</span></label>
       <div class="msg" id="s-msg"></div>
       <button class="btn p" id="s-go">Create account</button>
-    </section>
-
-    <!-- PROFILE (new Google users) -->
-    <section class="step" data-s="profile">
-      <h1>One last thing</h1>
-      <p class="sub">What should we call you?</p>
-      <label for="p-name">Name</label>
-      <input id="p-name" type="text" autocomplete="name" placeholder="Your name" maxlength="40">
-      <label class="chk"><input type="checkbox" id="p-terms"><span>I agree to the <button class="lnk" data-doc="terms" type="button">Terms of Service</button> and <button class="lnk" data-doc="privacy" type="button">Privacy Policy</button>.</span></label>
-      <div class="msg" id="p-msg"></div>
-      <button class="btn p" id="p-go">Finish</button>
     </section>
 
     <!-- FORGOT -->
@@ -269,21 +246,6 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') $$('.doc').forEach(x => x.classList.remove('on'));
   if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') $('.step.on .btn.p')?.click();
-});
-
-/* Google */
-$('#g-go').onclick = (e) => busy(e.currentTarget, async () => {
-  const email = norm($('#g-email').value);
-  if (!validEmail(email)) return fail('#g-msg', 'Enter a valid email address.', $('#g-email'));
-  const r = await (api.google ? api.google(email) : demo.google(email));
-  if (r.isNew) { state.pending = r.user; go('profile'); } else finish(r.user, false);
-});
-$('#p-go').onclick = (e) => busy(e.currentTarget, async () => {
-  const name = $('#p-name').value.trim();
-  if (name.length < 2) return fail('#p-msg', 'Enter your name.', $('#p-name'));
-  if (!$('#p-terms').checked) return fail('#p-msg', 'Please accept the Terms and Privacy Policy.');
-  const user = await api.signUp({ email: state.pending.email, name, provider: 'google' });
-  finish(user, true);
 });
 
 /* Email: check account, then login or sign up */
