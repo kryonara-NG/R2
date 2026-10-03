@@ -2,9 +2,11 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './shell.css';
 
+window.RH_TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY?.trim() || '';
+
 const pages = new Set([
   'index','home','search','library','series','player','people','person','settings',
-  'setup','share','soon','stats','genre','me','notifs'
+  'share','soon','stats','genre','me','notifs'
 ]);
 
 function pageForPath(pathname) {

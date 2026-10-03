@@ -1,8 +1,0 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d0b09"><title>Reelhouse</title><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="shared.css"></head><body style="padding:0"><div class="pad" style="max-width:440px;margin:auto"><h1 style="color:var(--o);margin-top:40px">Reelhouse</h1><h2 style="margin:28px 0 6px">Connect your movie data</h2><p style="color:var(--mut);font-size:14.5px;line-height:1.5;margin-bottom:18px">Paste your TMDB API key (v3). It is stored only on this device. Get one free at themoviedb.org under Settings, API.</p><input class="in" id="k" placeholder="TMDB API key" autocomplete="off" spellcheck="false"><p id="m" style="color:#d4281c;font-size:13px;min-height:20px;margin:8px 4px"></p><button class="btn p" id="go" style="width:100%">Save and continue</button></div>
-<script src="shared.js"></script><script>
-if(!RH.user())location.replace('index.html');
-$('#k').value=RH.key()||'';
-$('#go').onclick=async()=>{const k=$('#k').value.trim();if(!k)return $('#m').textContent='Enter your API key.';$('#go').textContent='Checking...';
-try{const r=await fetch('https://api.themoviedb.org/3/configuration?api_key='+encodeURIComponent(k));if(!r.ok)throw 0;localStorage.setItem('rh_tmdb',k);location.replace('home.html')}
-catch{$('#m').textContent='That key was not accepted. Check it and try again.';$('#go').textContent='Save and continue'}};
-</script></body></html>

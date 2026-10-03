@@ -191,7 +191,7 @@ const CONFIG = {
   // Paste a TMDB backdrop URL, e.g. 'https://image.tmdb.org/t/p/original/xxxx.jpg'. Empty = built-in orange cinematic scene.
   BACKDROP_URL: '',
   // Called after any successful sign in / sign up. Hook your app here.
-  onAuth: (user) => { location.replace(localStorage.getItem('rh_tmdb') ? 'home.html' : 'setup.html'); },
+  onAuth: (user) => { location.replace('home.html'); },
   // Replace with Firebase/Supabase calls later. Each returns a user {name,email,provider} or throws Error(message).
   adapter: null
 };
