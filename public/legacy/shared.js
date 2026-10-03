@@ -160,9 +160,26 @@ RH.Player=function(box,o={}){
   fr.referrerPolicy='origin';
   m.append(fr);
   ready=1;
+  let vsTime=0,vsDuration=0,vsPlaying=false,vsInfo={};
+  const vsSrc=()=>{
+   const u=new URL(o.iframe,location.href);
+   if(vsTime>0)u.searchParams.set('startAt',String(Math.max(0,vsTime)));
+   return u.toString();
+  };
+  const reloadVs=t=>{
+   vsTime=Math.max(0,Number(t)||0);
+   const fr=$('iframe',box);
+   if(fr)fr.src=vsSrc();
+   ended=0;
+   show();
+  };
   const onMessage=e=>{
-   if(!e.data||e.data.type!=='PLAYER_EVENT'||!e.data.data)return;
+   if(e.origin!=='https://vidsrc.sh'||!e.data||e.data.type!=='PLAYER_EVENT'||!e.data.data)return;
    const d=e.data.data,info=d.player_info||{},status=d.player_status,progress=d.player_progress,duration=d.player_duration;
+   vsInfo=info;
+   if(typeof progress==='number')vsTime=Math.max(0,progress);
+   if(typeof duration==='number'&&duration>0)vsDuration=duration;
+   vsPlaying=status==='playing';
    if(typeof o.onVidSrcEvent==='function')o.onVidSrcEvent(info,status,progress,duration);
    if(status==='completed')ended=1;
    ui();
@@ -170,10 +187,17 @@ RH.Player=function(box,o={}){
   addEventListener('message',onMessage);
   A={
    ok:()=>1,
-   play:()=>{},pause:()=>{},seek:t=>{},
-   cur:()=>0,dur:()=>0,mute:x=>{},rate:r=>{},playing:()=>false
+   play:()=>{},
+   pause:()=>{},
+   seek:t=>reloadVs(t),
+   cur:()=>vsTime,
+   dur:()=>vsDuration,
+   mute:x=>{},
+   rate:r=>{},
+   playing:()=>vsPlaying
   };
   box.classList.add('vidsrc-iframe');
+  box.dataset.playerSource='vidsrc';
  }else if(o.yt){const load=()=>new Promise(r=>{if(window.YT&&YT.Player)return r();const p=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{p&&p();r()};if(!document.getElementById('yta')){const s=document.createElement('script');s.id='yta';s.src='https://www.youtube.com/iframe_api';document.head.append(s)}});
   let y;A={ok:()=>y&&y.playVideo&&ready,play:()=>{ended=0;y.playVideo()},pause:()=>y.pauseVideo(),seek:t=>y.seekTo(t,true),cur:()=>y.getCurrentTime(),dur:()=>y.getDuration(),mute:x=>x?y.mute():y.unMute(),rate:r=>y.setPlaybackRate(r),playing:()=>y.getPlayerState()==1||y.getPlayerState()==3};
   load().then(()=>{if(dead)return;const d=document.createElement('div');m.append(d);y=new YT.Player(d,{videoId:o.yt,playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0,iv_load_policy:3,fs:0,playsinline:1,autoplay:o.auto?1:0,mute:o.mute?1:0,cc_load_policy:0,origin:location.origin},events:{onReady:()=>{ready=1;if(o.start)y.seekTo(o.start,true);if(o.mute)y.mute()},onStateChange:e=>{if(e.data===0){y.seekTo(0,true);y.pauseVideo();ended=1;o.onEnd&&o.onEnd();ui()}}}})})}
@@ -181,9 +205,9 @@ RH.Player=function(box,o={}){
   v.onloadedmetadata=()=>{if(o.start)v.currentTime=o.start};v.onended=()=>{ended=1;o.onEnd&&o.onEnd();ui()};v.onerror=()=>RH.toast('This video could not be loaded');
   A={ok:()=>1,play:()=>{ended=0;v.play()},pause:()=>v.pause(),seek:t=>v.currentTime=t,cur:()=>v.currentTime,dur:()=>v.duration||0,mute:x=>v.muted=x,rate:r=>v.playbackRate=r,playing:()=>!v.paused&&!v.ended}}
  const show=()=>{c.classList.add('on');clearTimeout(tm);tm=setTimeout(()=>{if(R()&&A.playing())c.classList.remove('on')},3200)};
- function ui(){if(!R())return;const cu=A.cur(),du=A.dur(),pl=A.playing();pb.innerHTML=ic(ended?'re':pl?'pause':'play');mb.innerHTML=ic(muted?'mute':'vol');if(!drag){rg.value=du?cu/du*1000:0;rg.style.setProperty('--p',(du?cu/du*100:0)+'%')}$('.t1',box).textContent=RH.fmt(cu);$('.t2',box).textContent=RH.fmt(du);if(!pl&&!ended)c.classList.add('on')}
+ function ui(){if(!R())return;const cu=A.cur(),du=A.dur(),pl=A.playing(),vs=box.classList.contains('vidsrc-iframe');pb.innerHTML=ic(ended?'re':pl?'pause':'play');mb.innerHTML=ic(muted?'mute':'vol');if(vs){pb.innerHTML=ic('play');mb.innerHTML=ic('vol');$('.sp[data-a=s]',box).textContent='Native';$('.sp[data-a=t]',box).textContent='Player controls'}if(!drag){rg.value=du?cu/du*1000:0;rg.style.setProperty('--p',(du?cu/du*100:0)+'%')}$('.t1',box).textContent=RH.fmt(cu);$('.t2',box).textContent=RH.fmt(du);if(!pl&&!ended)c.classList.add('on')}
  const iv=setInterval(()=>{if(!document.body.contains(box)){clearInterval(iv);return}if(!R())return;if(!sp0){sp0=1;const sv=+RH.S().speed||1;if(sv!=1){A.rate(sv);pi=Math.max(0,ps.indexOf(sv));$('.sp[data-a=s]',box).textContent=sv+'x'}}ui();o.onTime&&A.playing()&&o.onTime(A.cur(),A.dur())},300);
- const skip=n=>{if(!R())return;A.seek(Math.min(Math.max(0,A.cur()+n),A.dur()||1e9));ended=0;RH.vib(8);const f=$('.nfl.'+(n>0?'r':'l'),box);f.textContent=(n>0?'+':'-')+Math.abs(n)+'s';f.classList.remove('go');f.offsetWidth;f.classList.add('go');ui()};
+ const skip=n=>{if(!R())return;const next=Math.min(Math.max(0,A.cur()+n),A.dur()||1e9);A.seek(next);RH.vib(8);const f=$('.nfl.'+(n>0?'r':'l'),box);f.textContent=(n>0?'+':'-')+Math.abs(n)+'s';f.classList.remove('go');f.offsetWidth;f.classList.add('go');ui()};
  const fs=()=>{const on=box.classList.toggle('fs');document.documentElement.style.overflow=on?'hidden':'';try{if(on){(box.requestFullscreen||box.webkitRequestFullscreen||(()=>0)).call(box);screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})}else{document.fullscreenElement&&document.exitFullscreen();screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}}catch{}};
  document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&box.classList.contains('fs')&&dead===0&&document.body.contains(box)){box.classList.remove('fs');document.documentElement.style.overflow=''}});
  const act=a=>{if(!R())return;if(a=='p')A.playing()?A.pause():(ended&&A.seek(0),A.play());else if(a=='b')skip(-K);else if(a=='f')skip(K);else if(a=='t'){slt=(slt+1)%4;clearTimeout(st);const mm=[0,15,30,60][slt];$('[data-a=t]',box).textContent=mm?mm+'m':'Sleep';if(mm){RH.toast('Sleep timer: '+mm+' min');st=setTimeout(()=>{A.pause();RH.toast('Sleep timer: paused')},mm*6e4)}}else if(a=='m'){muted=!muted;A.mute(muted)}else if(a=='s'){pi=(pi+1)%ps.length;A.rate(ps[pi]);$('.sp',box).textContent=ps[pi]+'x'}else if(a=='z')fs();RH.vib(8);setTimeout(ui,60);show()};
