@@ -25,7 +25,7 @@ const RH={
  back(){document.body.classList.add('out');setTimeout(()=>history.length>1?history.back():location.replace('home.html'),230)},
  /* notifications + reminders */
  banner(t,b,href){const d=document.createElement('a');d.className='ban';d.href=href;d.innerHTML=`<i>${svg('bell')}</i><div><b>${esc(t)}</b><span>${esc(b)}</span></div>`;document.body.append(d);setTimeout(()=>d.classList.add('in'),30);setTimeout(()=>{d.classList.remove('in');setTimeout(()=>d.remove(),400)},4500)},
- notify(t,b,href='notifs.html'){const a=RH.get('rh_notifs',[]);a.unshift({id:Date.now()+Math.random(),t,b,href,ts:Date.now(),r:0});RH.set('rh_notifs',a.slice(0,60));const s=RH.S();RH.vib([20,50,20]);if(s.alerts)RH.banner(t,b,href);if(s.push&&window.Notification&&Notification.permission==='granted')try{new Notification(t,{body:b})}catch{}RH.badge()},
+ notify(t,b,href='notifs.html'){const a=RH.get('rh_notifs',[]);a.unshift({id:Date.now()+Math.random(),t,b,href,ts:Date.now(),r:0});RH.set('rh_notifs',a.slice(0,60));const s=RH.S();RH.vib([20,50,20]);if(s.alerts)RH.banner(t,b,href);if(s.push&&window.Notification&&Notification.permission==='granted')try{new Notification(t,{body:b})}catch{}if(RH.isNativeApp&&RH.isNativeApp()&&window.Android?.notify)try{window.Android.notify(String(t),String(b))}catch{}RH.badge()},
  badge(){const n=RH.get('rh_notifs',[]).filter(x=>!x.r).length;$$('.bd').forEach(e=>{e.textContent=n>9?'9+':n;e.style.display=n?'grid':'none'})},
  rem:()=>RH.get('rh_rem',{}),
  toggleRem(m){const r=RH.rem();if(r[m.id]){delete r[m.id];RH.set('rh_rem',r);RH.toast('Reminder removed');return false}
@@ -50,7 +50,7 @@ const RH={
 const DEMO=[{id:'d1',name:'Ada Okoro',av:'🦋',fb:1,g:[18,10749,35]},{id:'d2',name:'Tunde Bello',av:'🎧',fb:1,g:[28,53,878]},{id:'d3',name:'Chioma Nwosu',av:'🍿',fb:0,g:[35,10749,16]},{id:'d4',name:'Sam Carter',av:'🎸',fb:1,g:[27,53,80]},{id:'d5',name:'Lena Park',av:'🌙',fb:0,g:[18,878,14]},{id:'d6',name:'Kemi Adeyemi',av:'🔥',fb:1,g:[28,12,35]}];
 const AVS=['🎬','🍿','🦋','🎧','🎸','🌙','🔥','🦁','🚀','👑','🌍','⚡'];
 Object.assign(RH,{
- vib(p=10){if(RH.S().haptics===false)return;try{navigator.vibrate&&navigator.vibrate(p)}catch{}},
+ vib(p=10){if(RH.S().haptics===false)return;try{if(RH.isNativeApp&&RH.isNativeApp()&&window.Android?.vibrate){const ms=Array.isArray(p)?Math.max(...p.map(Number)):Number(p)||10;window.Android.vibrate(Math.min(500,Math.max(1,ms)));}else navigator.vibrate&&navigator.vibrate(p)}catch{}},
  me:()=>(RH.user()||{}).email||'guest',
  prof(){return{bio:'',av:'🎬',...RH.get('rh_prof_'+RH.me(),{})}},
  setProf(p){RH.set('rh_prof_'+RH.me(),{...RH.prof(),...p})},
@@ -125,6 +125,7 @@ RH.recommendationQuery=()=>{const gs=RH.interestGenres();return gs.length?'&with
 RH.appPrompt();
 document.addEventListener('click',e=>{if(e.target.closest('button,.btn,.chip,.nav a,.op,.ib,.bell,.fr,.sw'))RH.vib(8)},true);
 addEventListener('storage',e=>{if(e.key=='rh_inbox')RH.inbox()});
+addEventListener('rhshake',()=>{if(RH.S().shake!==false&&typeof RH.surprise==='function')RH.surprise()});
 (()=>{const s=RH.S();if(s.theme!='system')document.documentElement.dataset.theme=s.theme;
 let x0=null,y0=0;addEventListener('touchstart',e=>{const t=e.touches[0];x0=t.clientX<28?t.clientX:null;y0=t.clientY},{passive:true});
 addEventListener('touchend',e=>{if(x0===null||!document.body.dataset.back)return;const t=e.changedTouches[0];if(t.clientX-x0>80&&Math.abs(t.clientY-y0)<60)RH.back();x0=null},{passive:true});
