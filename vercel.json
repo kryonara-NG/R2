@@ -1,6 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "rm -rf public && mkdir -p public && unzip -o reelhouse-v6.zip -d public && cp -R public/reelhouse/. public/ && rm -rf public/reelhouse",
-  "outputDirectory": "public",
-  "cleanUrls": false
-}
