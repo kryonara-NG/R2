@@ -15,7 +15,7 @@ async function start(){
   if(P){P.destroy();P=null}
   v.innerHTML='';
   P=RH.Player(v,{
-   iframe:'https://vidsrc.sh/embed/movie/'+encodeURIComponent(tmdbId)+'?autoplay=1',
+   iframe:'https://vidsrc.sh/embed/movie/'+encodeURIComponent(tmdbId)+'?autoplay=1'+(pg&&pg.t&&pg.p<95?'&startAt='+Math.floor(pg.t):''),
    auto:1,
    start:pg&&pg.t&&pg.p<95?pg.t:0,
    onVidSrcEvent:(info,status,progress,duration)=>{
