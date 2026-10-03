@@ -184,6 +184,8 @@ RH.Player=function(box,o={}){
    if(status==='completed')ended=1;
    ui();
   };
+  // Keep the cross-origin listener scoped to this player instance so reopening
+  // the player does not stack duplicate progress/event handlers.
   addEventListener('message',onMessage);
   A={
    ok:()=>1,
@@ -216,7 +218,15 @@ RH.Player=function(box,o={}){
  rg.addEventListener('input',()=>{drag=1;clearTimeout(tm);const d=R()?A.dur():0;$('.t1',box).textContent=RH.fmt(rg.value/1000*d);rg.style.setProperty('--p',rg.value/10+'%')});
  rg.addEventListener('change',()=>{if(R()){A.seek(rg.value/1000*A.dur());ended=0}drag=0;show()});
  pb.innerHTML=ic('play');mb.innerHTML=ic(muted?'mute':'vol');show();
- return{destroy(){dead=1;clearTimeout(st);clearInterval(iv);box.classList.remove('np','yt','fs');document.documentElement.style.overflow='';box.innerHTML=''},play:()=>R()&&A.play(),pause:()=>R()&&A.pause(),seek:t=>R()&&A.seek(t),A};
+ return{destroy(){
+  dead=1;
+  clearTimeout(st);
+  clearInterval(iv);
+  if(o.iframe&&typeof onMessage==='function')removeEventListener('message',onMessage);
+  box.classList.remove('np','yt','fs');
+  document.documentElement.style.overflow='';
+  box.innerHTML='';
+},play:()=>R()&&A.play(),pause:()=>R()&&A.pause(),seek:t=>R()&&A.seek(t),A};
 };
 
 /* ===== Licensed stream adapter =====
