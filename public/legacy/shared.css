@@ -138,8 +138,16 @@ select.sel{height:38px;border-radius:19px;border:1.5px solid var(--line);backgro
 .trp{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:14px;right:14px;display:flex;gap:4px;z-index:91;pointer-events:none}.trp i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.28);overflow:hidden;position:relative}.trp i.d{background:#fff}.trp i.a:after{content:"";position:absolute;inset:0;background:#fff;transform-origin:left;animation:trf 7s linear forwards}.tr.hold .trp i.a:after{animation-play-state:paused}@keyframes trf{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
 
-/* VidSrc iframe player: use the provider's native controls because the
-   cross-origin iframe does not expose parent-side playback commands in its API. */
+/* VidSrc hybrid custom shell.
+   VidSrc owns play/pause, volume, subtitles and quality inside the cross-origin
+   iframe. Our shell owns the surrounding presentation, seek bar, +/-10s and fullscreen. */
 .np.vidsrc-iframe .npm iframe{pointer-events:auto!important;object-fit:contain;background:#000}
-.np.vidsrc-iframe .npc{display:none!important}
+.np.vidsrc-iframe .npc{display:block!important;pointer-events:none}
 .np.vidsrc-iframe .npt{display:none!important}
+.np.vidsrc-iframe .npc .npa{display:flex!important;pointer-events:none!important;justify-content:space-between;inset:auto 10px 50px 10px}
+.np.vidsrc-iframe .npc .npa button{pointer-events:auto!important}
+.np.vidsrc-iframe .npc .npa .big{display:none!important}
+.np.vidsrc-iframe .npc .npr{display:none!important}
+.np.vidsrc-iframe .npc .npb{display:flex!important;opacity:1!important;pointer-events:auto!important}
+.np.vidsrc-iframe .npc .npb .t1,.np.vidsrc-iframe .npc .npb .t2{color:#fff;text-shadow:0 1px 3px #000}
+.np.vidsrc-iframe .npc .npb button[data-a=z]{pointer-events:auto!important}
