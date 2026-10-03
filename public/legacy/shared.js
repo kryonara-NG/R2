@@ -170,13 +170,11 @@ RH.Player=function(box,o={}){
   addEventListener('message',onMessage);
   A={
    ok:()=>1,
-   play:()=>{try{fr.contentWindow.postMessage({type:'PLAYER_COMMAND',action:'play'},'*')}catch{}},
-   pause:()=>{try{fr.contentWindow.postMessage({type:'PLAYER_COMMAND',action:'pause'},'*')}catch{}},
-   seek:t=>{try{fr.contentWindow.postMessage({type:'PLAYER_COMMAND',action:'seek',time:t},'*')}catch{}},
+   play:()=>{},pause:()=>{},seek:t=>{},
    cur:()=>0,dur:()=>0,mute:x=>{},rate:r=>{},playing:()=>false
   };
   box.classList.add('vidsrc-iframe');
- }elseif(o.yt){const load=()=>new Promise(r=>{if(window.YT&&YT.Player)return r();const p=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{p&&p();r()};if(!document.getElementById('yta')){const s=document.createElement('script');s.id='yta';s.src='https://www.youtube.com/iframe_api';document.head.append(s)}});
+ }else if(o.yt){const load=()=>new Promise(r=>{if(window.YT&&YT.Player)return r();const p=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{p&&p();r()};if(!document.getElementById('yta')){const s=document.createElement('script');s.id='yta';s.src='https://www.youtube.com/iframe_api';document.head.append(s)}});
   let y;A={ok:()=>y&&y.playVideo&&ready,play:()=>{ended=0;y.playVideo()},pause:()=>y.pauseVideo(),seek:t=>y.seekTo(t,true),cur:()=>y.getCurrentTime(),dur:()=>y.getDuration(),mute:x=>x?y.mute():y.unMute(),rate:r=>y.setPlaybackRate(r),playing:()=>y.getPlayerState()==1||y.getPlayerState()==3};
   load().then(()=>{if(dead)return;const d=document.createElement('div');m.append(d);y=new YT.Player(d,{videoId:o.yt,playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0,iv_load_policy:3,fs:0,playsinline:1,autoplay:o.auto?1:0,mute:o.mute?1:0,cc_load_policy:0,origin:location.origin},events:{onReady:()=>{ready=1;if(o.start)y.seekTo(o.start,true);if(o.mute)y.mute()},onStateChange:e=>{if(e.data===0){y.seekTo(0,true);y.pauseVideo();ended=1;o.onEnd&&o.onEnd();ui()}}}})})}
  else{const v=document.createElement('video');v.playsInline=true;v.preload='metadata';v.src=o.src;v.muted=muted;if(o.auto)v.autoplay=true;m.append(v);ready=1;
