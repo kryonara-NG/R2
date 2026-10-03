@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   try {
-    const key = String(process.env.TMDB_KEY || '').trim();
+    const key = String(process.env['TMDB-KEY'] || process.env.TMDB_KEY || '').trim();
     if (!key) {
       return res.status(500).json({ error: 'TMDB_KEY is not configured in Vercel.' });
     }
