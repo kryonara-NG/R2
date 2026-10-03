@@ -10,7 +10,7 @@ const RH={
  key:()=>window.parent.RH_TMDB_API_KEY||localStorage.getItem('rh_tmdb'),
  user:()=>RH.get('rh_session',null),
  guard(){if(!RH.user())location.replace('index.html')},
- async api(p,q=''){const key=RH.key();if(!key)throw new Error('TMDB API key is not configured. Set VITE_TMDB_API_KEY in the deployment environment and rebuild.');const s=RH.S(),rg=/upcoming|now_playing/.test(p)?'&region='+s.region:'';const r=await fetch(`https://api.themoviedb.org/3${p}?api_key=${key}&language=${s.lang}&include_adult=${s.adult}${rg}${q}`);if(!r.ok)throw new Error(r.status==401?'Your TMDB API key was rejected.':'Could not reach TMDB. Check your connection.');return r.json()},
+ async api(p,q=''){const s=RH.S(),u=new URL('/api/tmdb',location.origin);u.searchParams.set('path',p);u.searchParams.set('language',s.lang);u.searchParams.set('include_adult',s.adult);if(/upcoming|now_playing/.test(p))u.searchParams.set('region',s.region);if(q){const x=new URLSearchParams(q.replace(/^&/,''));x.forEach((v,k)=>u.searchParams.set(k,v))}const r=await fetch(u);if(!r.ok){let m='Could not reach TMDB. Check your connection.';try{const d=await r.json();if(d.error)m=d.error;if(d.details)m+=' '+d.details}catch{}throw new Error(m)}return r.json()},
  img:(p,s='w342')=>p?`https://image.tmdb.org/t/p/${RH.S().saver&&s=='w342'?'w185':s}${p}`:'',
  card:m=>`<a class="card" href="player.html?id=${m.id}">${m.poster_path?`<img loading="lazy" src="${RH.img(m.poster_path)}" alt="">`:'<div class="ph"></div>'}<p>${esc(m.title)}</p></a>`,
  row:(t,a)=>a&&a.length?`<h2>${t}</h2><div class="row">${a.map(RH.card).join('')}</div>`:'',
@@ -98,6 +98,31 @@ Object.assign(RH,{
    const close=()=>{cp.destroy();c.classList.remove('on');g.classList.remove('on');setTimeout(()=>{c.remove();g.remove()},600)};
    c.onclick=e=>{if(e.target.id=='cd'||e.target===c){RH.vib(10);close()}else if(e.target.id=='ca'){const x=RH.toggleRem(m);e.target.textContent=x?'Alert is on':'Set alert';RH.vib(x?[15,40,15]:8)}}},2800)}
 });
+
+// Browser/app boundary: downloads and app-only features are hidden on the website.
+RH.isNativeApp=()=>/ReelhouseAndroid\\//i.test(navigator.userAgent);
+RH.appDownloadUrl='https://github.com/kryonara-NG/R2/releases/latest/download/reelhouse.apk';
+RH.appPrompt=()=>{
+  if(RH.isNativeApp()||RH.get('rh_app_prompt_done',0)||RH.get('rh_app_prompt_dismissed',0))return;
+  const started=Number(sessionStorage.rh_site_started||Date.now());sessionStorage.rh_site_started=started;
+  const wait=Math.max(0,180000-(Date.now()-started));
+  setTimeout(()=>{
+    if(RH.isNativeApp()||RH.get('rh_app_prompt_done',0)||RH.get('rh_app_prompt_dismissed',0)||$('.mod'))return;
+    const m=document.createElement('div');m.className='mod';m.innerHTML='<div class="sh2"><div style="font-size:38px">📱</div><h1>Get Reelhouse on Android</h1><p style="color:var(--mut);line-height:1.5">Download the native Android app for downloads, offline viewing, haptics, notifications and a smoother mobile experience.</p><a class="btn p" href="'+RH.appDownloadUrl+'" style="width:100%;text-align:center">Download Android app</a><button class="lk" id="appLater">Not now</button></div>';document.body.append(m);
+    m.onclick=e=>{if(e.target===m||e.target.id==='appLater'){RH.set('rh_app_prompt_dismissed',1);m.remove()}else if(e.target.closest('a')){RH.set('rh_app_prompt_done',1)}};
+  },wait);
+};
+RH.interestGenres=()=>{
+  const score={};const add=(gs,w)=>{(gs||[]).forEach(g=>{const id=Number(g);if(Number.isFinite(id))score[id]=(score[id]||0)+w})};
+  const p=RH.get('rh_pref',{});add(p.genres,5);
+  RH.get('rh_seen',[]).forEach(m=>add(m.genres,6));
+  RH.get('rh_list',[]).forEach(m=>add(m.genres,4));
+  RH.get('rh_hist',[]).forEach(m=>add(m.genres,5));
+  Object.values(RH.friends?RH.friends():{}).forEach(x=>add(x.g,1));
+  return Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id])=>id);
+};
+RH.recommendationQuery=()=>{const gs=RH.interestGenres();return gs.length?'&with_genres='+gs.join('|'):''};
+RH.appPrompt();
 document.addEventListener('click',e=>{if(e.target.closest('button,.btn,.chip,.nav a,.op,.ib,.bell,.fr,.sw'))RH.vib(8)},true);
 addEventListener('storage',e=>{if(e.key=='rh_inbox')RH.inbox()});
 (()=>{const s=RH.S();if(s.theme!='system')document.documentElement.dataset.theme=s.theme;
