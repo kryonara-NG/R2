@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "rm -rf .build && mkdir .build && unzip -q reelhouse-v8-react-vercel.zip -d .build && rm -f .build/public/legacy/setup.html && python3 - <<'PY'\nfrom pathlib import Path\nbase=Path('.build/public/legacy')\np=base/'index.html'; s=p.read_text(); s=s.replace(\"onAuth: (user) => { location.replace(localStorage.getItem('rh_tmdb') ? 'home.html' : 'setup.html'); },\", \"onAuth: (user) => { location.replace('home.html'); },\"); p.write_text(s)\np=base/'shared.js'; s=p.read_text(); s=s.replace(\"key:()=>localStorage.getItem('rh_tmdb'),\", \"key:()=>localStorage.getItem('rh_tmdb')||'e39d09282fd73792b1e8110c4861ee7f',\"); s=s.replace(\"guard(){if(!RH.user())location.replace('index.html');else if(!RH.key())location.replace('setup.html')},\", \"guard(){if(!RH.user())location.replace('index.html')},\"); p.write_text(s)\np=base/'settings.html'; s=p.read_text(); s=s.replace('<a class=\"rw\" href=\"setup.html\">TMDB API key<small></small></a>', ''); p.write_text(s)\np=Path('.build/src/main.jsx'); s=p.read_text(); s=s.replace("  'setup',", ""); p.write_text(s)\nPY\ncd .build && npm install && npm run build",
+  "outputDirectory": ".build/dist",
+  "cleanUrls": false
+}
