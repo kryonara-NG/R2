@@ -7,7 +7,7 @@ import './shell.css';
 window.RH_TMDB_API_KEY = '';
 // Legacy iframe pages read these from the parent shell for Supabase Auth.
 window.RH_SUPABASE_URL = 'https://ztgawuvaogxcdvduqagw.supabase.co';
-window.RH_SUPABASE_PUBLISHABLE_KEY = ''; // injected at deploy time by Vite only if explicitly wired later
+window.RH_SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
 const pages = new Set([
   'index','home','search','library','series','player','people','person','settings',
