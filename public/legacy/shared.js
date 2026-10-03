@@ -211,7 +211,8 @@ RH.Player=function(box,o={}){
  const iv=setInterval(()=>{if(!document.body.contains(box)){clearInterval(iv);return}if(!R())return;if(!sp0){sp0=1;const sv=+RH.S().speed||1;if(sv!=1){A.rate(sv);pi=Math.max(0,ps.indexOf(sv));$('.sp[data-a=s]',box).textContent=sv+'x'}}ui();o.onTime&&A.playing()&&o.onTime(A.cur(),A.dur())},300);
  const skip=n=>{if(!R())return;const next=Math.min(Math.max(0,A.cur()+n),A.dur()||1e9);A.seek(next);RH.vib(8);const f=$('.nfl.'+(n>0?'r':'l'),box);f.textContent=(n>0?'+':'-')+Math.abs(n)+'s';f.classList.remove('go');f.offsetWidth;f.classList.add('go');ui()};
  const fs=()=>{const on=box.classList.toggle('fs');document.documentElement.style.overflow=on?'hidden':'';try{if(on){(box.requestFullscreen||box.webkitRequestFullscreen||(()=>0)).call(box);screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})}else{document.fullscreenElement&&document.exitFullscreen();screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}}catch{}};
- document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&box.classList.contains('fs')&&dead===0&&document.body.contains(box)){box.classList.remove('fs');document.documentElement.style.overflow=''}});
+ const onFullscreenChange=()=>{if(!document.fullscreenElement&&box.classList.contains('fs')&&dead===0&&document.body.contains(box)){box.classList.remove('fs');document.documentElement.style.overflow=''}};
+ document.addEventListener('fullscreenchange',onFullscreenChange);
  const act=a=>{if(!R())return;if(a=='p')A.playing()?A.pause():(ended&&A.seek(0),A.play());else if(a=='b')skip(-K);else if(a=='f')skip(K);else if(a=='t'){slt=(slt+1)%4;clearTimeout(st);const mm=[0,15,30,60][slt];$('[data-a=t]',box).textContent=mm?mm+'m':'Sleep';if(mm){RH.toast('Sleep timer: '+mm+' min');st=setTimeout(()=>{A.pause();RH.toast('Sleep timer: paused')},mm*6e4)}}else if(a=='m'){muted=!muted;A.mute(muted)}else if(a=='s'){pi=(pi+1)%ps.length;A.rate(ps[pi]);$('.sp',box).textContent=ps[pi]+'x'}else if(a=='z')fs();RH.vib(8);setTimeout(ui,60);show()};
  let lt=0,ls=0;c.addEventListener('click',e=>{const b=e.target.closest('button');if(b)return act(b.dataset.a);if(e.target.closest('input'))return;const r=box.getBoundingClientRect(),x=e.clientX-r.left,sd=x<r.width/3?-1:x>r.width*2/3?1:0,n=Date.now();
   if(n-lt<320&&sd&&sd==ls){skip(sd*K);lt=0}else{c.classList.contains('on')&&R()&&A.playing()?c.classList.remove('on'):show();lt=n;ls=sd}});
@@ -223,6 +224,7 @@ RH.Player=function(box,o={}){
   clearTimeout(st);
   clearInterval(iv);
   if(o.iframe&&typeof onMessage==='function')removeEventListener('message',onMessage);
+  removeEventListener('fullscreenchange',onFullscreenChange);
   box.classList.remove('np','yt','fs');
   document.documentElement.style.overflow='';
   box.innerHTML='';
