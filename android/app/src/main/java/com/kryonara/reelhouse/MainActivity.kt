@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) return
             val n = NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setSmallIcon(com.kryonara.reelhouse.R.drawable.ic_reelhouse_notification)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setAutoCancel(true)
