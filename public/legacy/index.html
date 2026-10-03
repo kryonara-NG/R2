@@ -230,7 +230,7 @@ const supabaseAdapter = (SUPABASE_URL && SUPABASE_KEY) ? {
   signUp: async ({ email, name, password }) => {
     const data = await supabaseRequest('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ email, password, data: { display_name: name, name } }) });
     const user = data.user || {};
-    if (!data.session) throw new Error('Account created. Check your email to confirm your account before signing in.');
+    if (!data.session) return { pending:true, id:user.id, name:name||user.user_metadata?.display_name||user.user_metadata?.name||'', email:user.email||email, provider:'email' };
     return { id:user.id, name:name||user.user_metadata?.display_name||user.user_metadata?.name||'', email:user.email||email, provider:'email', access_token:data.session.access_token, refresh_token:data.session.refresh_token };
   },
   signIn: async ({ email, password }) => {
@@ -302,11 +302,19 @@ $('#s-pw').addEventListener('input', (e) => {
   $$('#meter i').forEach((b, i) => b.style.background = i < s ? c : '');
 });
 $('#s-go').onclick = (e) => busy(e.currentTarget, async () => {
-  const name = $('#s-name').value.trim(), pw = $('#s-pw').value;
-  if (name.length < 2) return fail('#s-msg', 'Enter your name.', $('#s-name'));
-  if (pw.length < 8) return fail('#s-msg', 'Use at least 8 characters.', $('#s-pw'));
-  if (!$('#s-terms').checked) return fail('#s-msg', 'Please accept the Terms and Privacy Policy.');
-  finish(await api.signUp({ email: state.email, name, password: pw }), true);
+  const name=$('#s-name').value.trim(), pw=$('#s-pw').value;
+  if(name.length<2)return fail('#s-msg','Enter your name.',$('#s-name'));
+  if(pw.length<8)return fail('#s-msg','Use at least 8 characters.',$('#s-pw'));
+  if(!$('#s-terms').checked)return fail('#s-msg','Please accept the Terms and Privacy Policy.');
+  try{
+    const user=await api.signUp({email:state.email,name,password:pw});
+    if(user.pending){
+      $('#s-msg').style.color='var(--mut)';
+      $('#s-msg').textContent='Account created. Check your email to confirm your account, then sign in.';
+      return;
+    }
+    finish(user,true);
+  }catch(err){fail('#s-msg',err.message||'Could not create your account.')}
 });
 
 /* Forgot password (demo resets directly; with a real backend this sends an email link) */
