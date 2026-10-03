@@ -136,3 +136,10 @@ select.sel{height:38px;border-radius:19px;border:1.5px solid var(--line);backgro
 .tri{font-size:46px;display:inline-block;animation:wig 1.5s infinite}@keyframes wig{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(-16deg)}20%{transform:rotate(16deg)}30%{transform:rotate(-10deg)}40%{transform:rotate(8deg)}}
 .trc h3{font:800 21px var(--disp);margin:6px 0}.trc p{font-size:14px;line-height:1.5;opacity:.92;margin:0 0 16px}.trc .row2{display:flex;gap:10px;align-items:center}.trc .row2 button{height:44px;border-radius:22px;border:0;font:700 14px var(--body);cursor:pointer}.trc .sk2{background:none;color:#fff;opacity:.75;padding:0 12px}.trc .nx{flex:1;background:var(--o);color:#fff;box-shadow:inset 1px 1px 0 rgba(255,255,255,.5),0 6px 20px rgba(255,106,26,.5)}
 .trp{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:14px;right:14px;display:flex;gap:4px;z-index:91;pointer-events:none}.trp i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.28);overflow:hidden;position:relative}.trp i.d{background:#fff}.trp i.a:after{content:"";position:absolute;inset:0;background:#fff;transform-origin:left;animation:trf 7s linear forwards}.tr.hold .trp i.a:after{animation-play-state:paused}@keyframes trf{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+
+/* VidSrc iframe player: use the provider's native controls because the
+   cross-origin iframe does not expose parent-side playback commands in its API. */
+.np.vidsrc-iframe .npm iframe{pointer-events:auto!important;object-fit:contain;background:#000}
+.np.vidsrc-iframe .npc{display:none!important}
+.np.vidsrc-iframe .npt{display:none!important}
