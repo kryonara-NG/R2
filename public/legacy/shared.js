@@ -334,3 +334,10 @@ RH.TOURS={
 RH.autoTour=function(n=0){const k=location.pathname.split('/').pop().replace('.html','')||'home';if(!RH.TOURS[k]||RH.get('rh_tour',{})[k]||n>10)return;
  if(document.querySelector('.mod,.cine,.tr'))return setTimeout(()=>RH.autoTour(n+1),2500);RH.tour(k,RH.TOURS[k])};
 (()=>{const _n=RH.nav;RH.nav=function(i){_n.call(RH,i);setTimeout(()=>RH.autoTour(),1800)}})();
+
+
+/* Backward-compatible player aliases for older page integrations. */
+if(typeof RH.Player==='function'){
+  RH.Play=RH.Player;
+  RH.play=RH.Player;
+}
