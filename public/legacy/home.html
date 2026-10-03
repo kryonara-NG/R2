@@ -8,7 +8,7 @@ $('#dc').onclick=()=>RH.surprise();let eg=0;$('#lg').onclick=()=>{if(++eg>=7){eg
 addEventListener('scroll',()=>$('#tb').classList.toggle('s',scrollY>240),{passive:true});
 const dc=P.era=='Classics'?'&primary_release_date.lte=2000-12-31':P.era=='2010s'?'&primary_release_date.gte=2010-01-01&primary_release_date.lte=2019-12-31':'';
 function sec(i){const c=Math.floor(Math.max(i-8,0)/G.length)+1;
- if(i==0)return P.genres&&P.genres.length?{t:'Picked for you',p:'/discover/movie',q:'&sort_by=popularity.desc&with_genres='+P.genres.join('|')+dc}:{t:'Trending this week',p:'/trending/movie/week',q:''};
+ if(i==0){const rq=RH.recommendationQuery();return rq?{t:'Picked for you',p:'/discover/movie',q:'&sort_by=popularity.desc'+rq+dc}:{t:'Trending this week',p:'/trending/movie/week',q:''}}
  if(i==1)return{t:'Top 10 today',p:'/trending/movie/day',q:'',rank:1};
  if(i==2)return{soon:1,t:'Coming soon',p:'/movie/upcoming',q:'&page=1'};
  if(i==3)return pl?{t:'From your favourite regions',p:'/discover/movie',q:'&sort_by=popularity.desc&with_original_language='+pl}:{t:'Popular',p:'/movie/popular',q:''};
