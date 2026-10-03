@@ -77,11 +77,19 @@ Object.assign(RH,{
   if(p>=100&&!RH.get('rh_seen',[]).some(x=>x.id===m.id))RH.push('rh_seen',m,500)},
  pct(id){const s=RH.get('rh_seen',[]).some(x=>x.id==id);return s?100:(RH.prog(id).p||0)},
  dl:()=>RH.get('rh_dl',{}),
- async download(m,btn){const d=RH.dl();if(d[m.id])return RH.toast('Already downloaded');let p=0;RH.vib(15);
-  const own=RH.get('rh_videos',{})[m.id];if(own&&window.caches)caches.open('rh-dl').then(c=>c.add(own)).catch(()=>{});
-  await new Promise(r=>{const t=setInterval(()=>{p+=Math.random()*14+6;RH.vib(4);if(btn)btn.textContent='Downloading '+Math.min(100,Math.round(p))+'%';if(p>=100){clearInterval(t);r()}},260)});
-  const x=RH.dl();x[m.id]={...RH.mini(m),ts:Date.now(),mb:Math.round((m.runtime||100)*11)};RH.set('rh_dl',x);RH.vib([20,60,20]);RH.toast('Saved to Downloads');RH.notify('Download complete',m.title+' is ready in Library > Downloads.','library.html?t=rh_dl')},
- /* cinematic coming-soon pop-up */
+ async download(m,btn){
+  if(!RH.isNativeApp()){RH.toast('Offline downloads are available in the Android app.');return}
+  const direct=m.authorized_media_url||m.download_url||m.file_url;
+  if(!direct||!window.Android?.downloadAuthorized){
+    RH.toast('This title does not have an authorized offline source yet.');return
+  }
+  if(!Android.downloadAuthorized(String(direct),String(m.title||'Reelhouse'))){
+    RH.toast('Offline download could not be started.');return
+  }
+  const x=RH.dl();x[m.id]={...RH.mini(m),ts:Date.now(),mb:0};RH.set('rh_dl',x);
+  RH.vib([20,60,20]);RH.toast('Download started');RH.notify('Download started',m.title+' is downloading on this device.','library.html?t=rh_dl');
+},
+/* cinematic coming-soon pop-up */
  cine(){const s=RH.S();if(s.cine===false||!RH.get('rh_svy',0)||sessionStorage.rh_cine)return;const t0=+sessionStorage.rh_t0||(sessionStorage.rh_t0=Date.now());
   const P=RH.cinePick().catch(()=>null);setTimeout(async()=>{if(sessionStorage.rh_cine||$('.mod'))return;const m=await P;if(m)RH.cinePlay(m)},Math.max(0,1e4-(Date.now()-t0)))},
  async cinePick(){const P=RH.get('rh_pref',{}),today=new Date().toISOString().slice(0,10),seen=RH.get('rh_cine',[]);
