@@ -99,6 +99,7 @@ a,.lnk{color:var(--o);font-weight:600;text-decoration:none;cursor:pointer;backgr
       <div class="fld"><input id="l-pw" type="password" autocomplete="current-password" placeholder="Your password"><button class="eye" data-eye="l-pw" type="button">Show</button></div>
       <div class="msg" id="l-msg"></div>
       <button class="btn p" id="l-go">Sign in</button>
+      <button class="btn" id="l-new" type="button">Create a new account</button>
       <p class="alt"><button class="lnk" data-go="forgot">Forgot password?</button></p>
     </section>
 
@@ -305,6 +306,8 @@ $('#e-go').onclick = (e) => busy(e.currentTarget, async () => {
     go('login');
   }
 });
+$('#l-new').onclick = () => { $('#s-who').textContent = `Setting up ${state.email}`; $('#s-name').value=''; $('#s-pw').value=''; $('#s-terms').checked=false; go('signup'); };
+
 $('#l-go').onclick = (e) => busy(e.currentTarget, async () => {
   const pw = $('#l-pw').value; if (!pw) return fail('#l-msg', 'Enter your password.', $('#l-pw'));
   try { finish(await api.signIn({ email: state.email, password: pw }), false); }
