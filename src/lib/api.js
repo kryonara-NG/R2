@@ -52,6 +52,20 @@ export async function submitAssignment({assignmentId,userId,text,url,file}){
   if(error) throw error;
   return data;
 }
+export async function adminPublishResult({submissionId,score,feedback,awardTitle}){
+  const {data,error}=await supabase.rpc('admin_publish_result',{p_submission_id:submissionId,p_score:score,p_feedback:feedback||null,p_award_title:awardTitle||null});
+  if(error) throw error;
+  return data;
+}
+export async function adminIssueCertificate(submissionId){
+  const {data,error}=await supabase.rpc('admin_issue_certificate',{p_submission_id:submissionId});
+  if(error) throw error;
+  return data;
+}
+export async function markNotificationRead(id){
+  const {error}=await supabase.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id);
+  if(error) throw error;
+}
 export async function downloadSubmission(path){
   const {data,error}=await supabase.storage.from('submissions').createSignedUrl(path,3600);
   if(error) throw error;
