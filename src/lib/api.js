@@ -16,7 +16,7 @@ export async function getEnrollment(userId,courseId){
   return data;
 }
 export async function enroll(userId,courseId){
-  const {data,error}=await supabase.from('enrollments').upsert({user_id:userId,course_id:courseId,status:'active'},{onConflict:'user_id,course_id'}).select().single();
+  const {data,error}=await supabase.from('enrollments').upsert({user_id:userId,course_id:courseId,status:'pending'},{onConflict:'user_id,course_id'}).select().single();
   if(error) throw error;
   return data;
 }
@@ -52,7 +52,7 @@ export async function submitAssignment({assignmentId,userId,text,url,file}){
   if(error) throw error;
   return data;
 }
-export async function adminPublishResult({submissionId,score,feedback,awardTitle}){
+export async function approveEnrollment({userId,courseId}){const{data,error}=await supabase.from('enrollments').update({status:'active',payment_confirmed:true}).eq('user_id',userId).eq('course_id',courseId).select().single();if(error)throw error;return data;}\nexport async function adminPublishResult({submissionId,score,feedback,awardTitle}){
   const {data,error}=await supabase.rpc('admin_publish_result',{p_submission_id:submissionId,p_score:score,p_feedback:feedback||null,p_award_title:awardTitle||null});
   if(error) throw error;
   return data;
