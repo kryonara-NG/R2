@@ -35,7 +35,7 @@ export async function getAssignments(courseId){
   return data||[];
 }
 export async function getMySubmissions(userId){
-  const {data,error}=await supabase.from('submissions').select('*, assignments(*)').eq('student_id',userId).order('submitted_at',{ascending:false});
+  const {data,error}=await supabase.from('submissions').select('*, assignments(*), assessment_results(*)').eq('student_id',userId).order('submitted_at',{ascending:false});
   if(error) throw error;
   return data||[];
 }
