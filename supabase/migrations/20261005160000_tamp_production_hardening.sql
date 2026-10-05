@@ -75,20 +75,23 @@ with check (
 );
 
 drop policy if exists submissions_self_update on public.submissions;
-create policy submissions_self_update on public.submissions for update to authenticated
-using((select auth.uid())=student_id and status in('submitted','returned'))
+drop policy if exists submissions_admin_update on public.submissions;
+create policy submissions_update on public.submissions for update to authenticated
+using(
+ (select private.is_admin())
+ or ((select auth.uid())=student_id and status in('submitted','returned'))
+)
 with check(
- (select auth.uid())=student_id and status='submitted'
- and exists (
-   select 1 from public.assignments a
-   where a.id=assignment_id and private.course_week_open(a.course_id,a.week_number)
-   and exists (select 1 from public.enrollments e where e.user_id=(select auth.uid()) and e.course_id=a.course_id and e.status in ('active','completed'))
+ (select private.is_admin())
+ or (
+   (select auth.uid())=student_id and status='submitted'
+   and exists (
+     select 1 from public.assignments a
+     where a.id=assignment_id and private.course_week_open(a.course_id,a.week_number)
+     and exists (select 1 from public.enrollments e where e.user_id=(select auth.uid()) and e.course_id=a.course_id and e.status in ('active','completed'))
+   )
  )
 );
-
-drop policy if exists submissions_admin_update on public.submissions;
-create policy submissions_admin_update on public.submissions for update to authenticated
-using((select private.is_admin())) with check((select private.is_admin()));
 
 drop policy if exists notifications_self_update on public.notifications;
 create policy notifications_self_update on public.notifications for update to authenticated
