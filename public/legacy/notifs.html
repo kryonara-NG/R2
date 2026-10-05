@@ -1,9 +1,0 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d0b09"><title>Reelhouse</title><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="shared.css"></head><body><div id="c"></div><script src="shared.js"></script><script>
-
-RH.guard();RH.hdr('Notifications','<button class="chip" id="ra" style="margin-right:6px">Mark all read</button><button class="chip" id="ca">Clear</button>');
-const ago=t=>{const s=(Date.now()-t)/1e3;return s<60?'Just now':s<3600?Math.floor(s/60)+' min ago':s<86400?Math.floor(s/3600)+' h ago':Math.floor(s/86400)+' d ago'};
-function draw(){const a=RH.get('rh_notifs',[]);$('#c').innerHTML=a.length?a.map((n,i)=>`<a class="nt${n.r?'':' u'}" href="${esc(n.href)}" data-i="${i}"><i>${svg('bell')}</i><div><b>${esc(n.t)}</b><span>${esc(n.b)}</span><em>${ago(n.ts)}</em></div></a>`).join(''):'<div class="state"><b>You are all caught up</b>Tap the bell on a coming-soon movie to get release alerts here.<br><br><a class="btn p" href="home.html">Explore</a></div>'}
-$('#c').onclick=e=>{const a=e.target.closest('.nt');if(!a)return;const l=RH.get('rh_notifs',[]);l[a.dataset.i].r=1;RH.set('rh_notifs',l)};
-$('#ra').onclick=()=>{RH.set('rh_notifs',RH.get('rh_notifs',[]).map(n=>({...n,r:1})));draw();RH.toast('All marked as read')};
-$('#ca').onclick=()=>{RH.set('rh_notifs',[]);draw()};draw();
-</script></body></html>
