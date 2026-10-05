@@ -41,7 +41,7 @@ export async function getMySubmissions(userId){
 }
 export async function submitAssignment({assignmentId,userId,text,url,file}){
   let filePath=null;
-  if(file){
+  if(file){if(file.size>20*1024*1024)throw new Error('Files must be 20 MB or smaller.');
     const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
     filePath=userId+'/'+assignmentId+'/'+Date.now()+'-'+safe;
     const {error}=await supabase.storage.from('submissions').upload(filePath,file,{contentType:file.type||undefined,upsert:false});
