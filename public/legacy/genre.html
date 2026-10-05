@@ -1,6 +1,0 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d0b09"><title>Reelhouse</title><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="shared.css"></head><body><div id="c" class="grid" style="margin-top:16px"></div><div id="sen" style="height:50px"></div><script src="shared.js"></script><script>
-
-RH.guard();const q=new URLSearchParams(location.search),g=q.get('g');RH.hdr(esc(q.get('n')||'Browse'));let pg=1,busy=0,end=0;
-async function more(){if(busy||end)return;busy=1;try{const d=await RH.api('/discover/movie','&sort_by=popularity.desc&with_genres='+g+'&page='+pg++);$('#c').insertAdjacentHTML('beforeend',d.results.map(RH.card).join(''));if(pg>d.total_pages)end=1}catch(e){RH.toast(e.message)}busy=0;if(!end&&$('#sen').getBoundingClientRect().top<innerHeight+400)more()}
-$('#c').innerHTML=RH.sk(9);setTimeout(()=>{$('#c').innerHTML='';more();new IntersectionObserver(e=>e[0].isIntersecting&&more(),{rootMargin:'500px'}).observe($('#sen'))},50);
-</script></body></html>
