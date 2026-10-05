@@ -4,7 +4,8 @@ import{COURSES}from'./data/courses.js';
 import'./styles.css';
 
 const KEY='tamp_v2';
-const store=()=>JSON.parse(localStorage.getItem(KEY)||'{"users":{},"s":null,"p":{},"n":[],"last":"py"}');
+const DEFAULT_STATE={users:{},s:null,p:{},n:[],last:'py'};
+const store=()=>{try{const raw=localStorage.getItem(KEY);const d=raw?JSON.parse(raw):DEFAULT_STATE;return {...DEFAULT_STATE,...d,users:d.users||{},p:d.p||{},n:d.n||[]}}catch{return {...DEFAULT_STATE}}};
 const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
 const me=()=>{const d=store();return d.s&&d.users[d.s]};
 const lessons=c=>c?.modules?.flatMap(m=>m.l||[])||[];
@@ -41,5 +42,6 @@ function Profile(){const u=me(),nav=useNavigate();if(!u)return <NotFound/>;retur
 const Simple=({title,children})=><section className="sec"><div className="hero inner"><h1>{title}</h1></div><div className="card">{children}</div></section>;
 const NotFound=()=> <Simple title="Not found"><p>That page does not exist.</p><Link className="btn" to="/">Go home</Link></Simple>;
 
+class ErrorBoundary extends React.Component{constructor(props){super(props);this.state={error:null}}static getDerivedStateFromError(error){return{error}}componentDidCatch(error,info){console.error('TAMP runtime error',error,info)}render(){if(this.state.error)return <Simple title="Something went wrong"><p className="err">This page hit an unexpected error. Refresh and try again.</p><button className="btn" onClick={()=>location.reload()}>Refresh</button></Simple>;return this.props.children}}
 function Router(){const{pathname:p}=useLocation();if(p==='/')return <Home/>;if(p==='/courses')return <Courses/>;if(p.startsWith('/courses/'))return <Course/>;if(p==='/learn'||p.startsWith('/learn/'))return <Learn/>;if(p.startsWith('/lesson/'))return <Lesson/>;if(p==='/login')return <Auth/>;if(p==='/signup')return <Auth signup/>;if(p==='/profile')return <Profile/>;if(p==='/notifications')return <Simple title="Notifications"><p className="mu">No new notifications.</p></Simple>;if(p==='/settings')return <Simple title="Settings"><p>Theme preference is available from the top bar.</p></Simple>;if(p==='/support')return <Simple title="Support"><p>Support content can be connected to your production backend here.</p></Simple>;if(p==='/verify')return <Simple title="Verify credential"><input placeholder="Credential code"/></Simple>;return <NotFound/>}
-export default function App(){return <Layout><Router/></Layout>}
+export default function App(){return <ErrorBoundary><Layout><Router/></Layout></ErrorBoundary>}
