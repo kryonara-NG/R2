@@ -44,6 +44,12 @@ function QuizPage(){
  return <section className="sec quiz-page"><div className="hero inner"><p className="eyebrow">{data.quiz.kind==='graded'?'GRADED QUIZ':'PRACTICE QUIZ'}</p><h1>{data.quiz.title}</h1><p className="lead">{data.quiz.instructions}</p>{timer&&<div className="quiz-timer"><b>{timer}</b><span>remaining</span></div>}</div><div className="card quiz-rules"><b>Assessment rule</b><p>Stay on this page until you submit. Switching away, closing the page or leaving the quiz records an interruption.</p></div><div className="card">{data.questions.map(q=><div className="quiz-question" key={q.id}><small>Question {q.question_number} · {q.points} point{q.points===1?'':'s'}</small><h3>{q.prompt}</h3>{q.options.map(option=><label className="quiz-option" key={option}><input type="radio" name={q.id} checked={answers[q.id]===option} onChange={()=>setAnswers(v=>({...v,[q.id]:option}))}/><span>{option}</span></label>)}</div>)}<button className="btn" disabled={busy||data.questions.some(q=>!answers[q.id])} onClick={()=>submit(false)}>{busy?'Submitting…':'Submit quiz'}</button>{msg&&<p className="status">{msg}</p>}{result!=null&&data.quiz.kind==='practice'&&<div className="result"><b>Practice score: {Number(result).toFixed(2)}%</b><p>This practice score is not added to your official Grades table.</p></div>}</div></section>;
 }
 
+export function GradeTile(){
+ const[s,setS]=useState({average_percent:0,graded_count:0,fast_attempts:0});
+ useEffect(()=>{supabase.rpc('release_due_quiz_results').then(()=>supabase.rpc('get_my_grade_summary')).then(({data})=>data&&setS(data))},[]);
+ return <Link className="grade-tile" to="/grades"><span><small>QUIZ PERFORMANCE</small><b>{Number(s.average_percent||0).toFixed(2)}%</b></span><span><strong>{s.graded_count||0}</strong><small>graded quizzes</small></span></Link>;
+}
+
 export function Grades({user}){
  const[rows,setRows]=useState([]),[summary,setSummary]=useState({average_percent:0,graded_count:0,fast_attempts:0}),[loading,setLoading]=useState(true);
  useEffect(()=>{(async()=>{setLoading(true);await supabase.rpc('release_due_quiz_results');const[g,s]=await Promise.all([supabase.rpc('get_my_grades'),supabase.rpc('get_my_grade_summary')]);setRows(g.data||[]);setSummary(s.data||{average_percent:0,graded_count:0,fast_attempts:0});setLoading(false)})()},[user?.id]);
