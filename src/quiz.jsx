@@ -15,7 +15,7 @@ function QuizPage(){
  const{quizId}=useParams(),[data,setData]=useState(null),[answers,setAnswers]=useState({}),[busy,setBusy]=useState(true),[msg,setMsg]=useState(''),[left,setLeft]=useState(null),[result,setResult]=useState(null);
  const submittedRef=useRef(false);
  const load=async()=>{setBusy(true);setMsg('');try{
-  await supabase.rpc('release_due_quiz_results');
+  await supabase.rpc('release_my_due_quiz_results');
   let{data:q,error}=await supabase.rpc('get_student_quiz',{p_quiz_id:quizId});if(error)throw error;
   if(!q.attempt){const r=await supabase.rpc('start_quiz',{p_quiz_id:quizId});if(r.error)throw r.error;({data:q,error}=await supabase.rpc('get_student_quiz',{p_quiz_id:quizId}));if(error)throw error}
   setData(q);if(q.attempt?.score_percent!=null&&q.attempt.status==='released')setResult(q.attempt.score_percent);
@@ -46,13 +46,13 @@ function QuizPage(){
 
 export function GradeTile(){
  const[s,setS]=useState({average_percent:0,graded_count:0,fast_attempts:0});
- useEffect(()=>{supabase.rpc('release_due_quiz_results').then(()=>supabase.rpc('get_my_grade_summary')).then(({data})=>data&&setS(data))},[]);
+ useEffect(()=>{supabase.rpc('release_my_due_quiz_results').then(()=>supabase.rpc('get_my_grade_summary')).then(({data})=>data&&setS(data))},[]);
  return <Link className="grade-tile" to="/grades"><span><small>QUIZ PERFORMANCE</small><b>{Number(s.average_percent||0).toFixed(2)}%</b></span><span><strong>{s.graded_count||0}</strong><small>graded quizzes</small></span></Link>;
 }
 
 export function Grades({user}){
  const[rows,setRows]=useState([]),[summary,setSummary]=useState({average_percent:0,graded_count:0,fast_attempts:0}),[loading,setLoading]=useState(true);
- useEffect(()=>{(async()=>{setLoading(true);await supabase.rpc('release_due_quiz_results');const[g,s]=await Promise.all([supabase.rpc('get_my_grades'),supabase.rpc('get_my_grade_summary')]);setRows(g.data||[]);setSummary(s.data||{average_percent:0,graded_count:0,fast_attempts:0});setLoading(false)})()},[user?.id]);
+ useEffect(()=>{(async()=>{setLoading(true);await supabase.rpc('release_my_due_quiz_results');const[g,s]=await Promise.all([supabase.rpc('get_my_grades'),supabase.rpc('get_my_grade_summary')]);setRows(g.data||[]);setSummary(s.data||{average_percent:0,graded_count:0,fast_attempts:0});setLoading(false)})()},[user?.id]);
  return <section className="sec grades-page"><div className="hero inner"><p className="eyebrow">ME · GRADES</p><h1>My Grades</h1><p className="lead">Every official graded quiz is shown as a percentage.</p></div><div className="stats"><div><b>{Number(summary.average_percent||0).toFixed(2)}%</b><span>average performance</span></div><div><b>{summary.graded_count||0}</b><span>graded quizzes</span></div><div><b>{summary.fast_attempts||0}</b><span>speed flags</span></div></div>{loading?<div className="card">Loading grades…</div>:rows.length?<div className="card grades-table-wrap"><table className="grades-table"><thead><tr><th>Assessment</th><th>Week / Journey</th><th>Score</th><th>Date</th></tr></thead><tbody>{rows.map(r=><tr key={r.attempt_id}><td><b>{r.quiz_title}</b><small>Graded Quiz</small></td><td>Week {r.journey_number}<small>{r.journey_title}</small></td><td><strong>{Number(r.score_percent||0).toFixed(2)}%</strong></td><td>{fmt(r.released_at)}</td></tr>)}</tbody></table></div>:<div className="card empty"><h3>No released grades yet</h3><p className="mu">Complete a graded quiz. Results become visible after the 24-hour release period.</p></div>}</section>;
 }
 
