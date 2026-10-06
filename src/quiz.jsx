@@ -32,7 +32,7 @@ function QuizPage(){
   const pagehide=()=>{if(!submittedRef.current)supabase.rpc('record_quiz_event',{p_attempt_id:data.attempt.id,p_event_type:'pagehide'})};
   const before=ev=>{if(!submittedRef.current){ev.preventDefault();ev.returnValue='';supabase.rpc('record_quiz_event',{p_attempt_id:data.attempt.id,p_event_type:'beforeunload'})}};
   document.addEventListener('visibilitychange',hidden);window.addEventListener('pagehide',pagehide);window.addEventListener('beforeunload',before);
-  return()=>{clearInterval(t);clearInterval(hb);document.removeEventListener('visibilitychange',hidden);window.removeEventListener('pagehide',pagehide);window.removeEventListener('beforeunload',before)};
+  return()=>{clearInterval(t);clearInterval(hb);document.removeEventListener('visibilitychange',hidden);window.removeEventListener('pagehide',pagehide);window.removeEventListener('beforeunload',before);if(!submittedRef.current)supabase.rpc('record_quiz_event',{p_attempt_id:data.attempt.id,p_event_type:'interrupted'})};
  },[data]);
  const timer=left==null?null:(Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0'));
  if(busy&&!data)return <section className="sec"><div className="card">Loading quiz…</div></section>;
