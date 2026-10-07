@@ -1,6 +1,6 @@
 import{useEffect}from'react';
 
-const SITE='https://r2-kryonara1.vercel.app';
+const SITE='https://r2-swff.vercel.app';
 const base={name:'TAMP · Technical Campus',description:'TAMP is a cohort-based technical learning platform offering structured, practical learning with lessons, assignments, assessments, feedback and verifiable academic records.',image:SITE+'/og-image.png'};
 const pages={
  '/':{title:'TAMP · Technical Campus | Cohort-Based Technical Learning',description:'Learn practical technical skills through structured TAMP cohorts, daily learning, practical assignments, assessment, feedback and verifiable achievement.'},
