@@ -51,7 +51,138 @@ function CourseDetail(){
  </div>
 }function DailyFeedback({level,day,onClose}){const[rating,setRating]=useState(0),[comment,setComment]=useState(''),[busy,setBusy]=useState(false),[done,setDone]=useState(false);const send=async()=>{if(!rating||comment.trim().length<3)return;setBusy(true);try{await submitDailyFeedback({courseId:'da',journeyNumber:level.journey_number||level.level_number,dayNumber:day,rating,comment});setDone(true);setTimeout(onClose,700)}catch{}finally{setBusy(false)}};if(done)return <div className="feedback-modal"><div className="feedback-sheet"><div className="success-icon success"><Icon name="shield"/></div><h2>Thanks for the feedback</h2><p className="mu">Your response helps TAMP improve the learning experience.</p></div></div>;return <div className="feedback-modal"><div className="feedback-sheet"><button className="feedback-close" onClick={onClose}>×</button><span className="eyebrow">DAY {day} COMPLETE</span><h2>How was today’s learning?</h2><p className="mu">Tell us what helped and what we could improve.</p><div className="rating-row">{[1,2,3,4,5].map(n=><button key={n} className={rating>=n?'active':''} onClick={()=>setRating(n)}>★</button>)}</div><textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="Your feedback…"/><button className="btn" disabled={!rating||comment.trim().length<3||busy} onClick={send}>{busy?'Sending feedback…':'Send feedback'}</button></div></div>}
 
-function LevelCard({level,user,current}){const content=Array.isArray(level.content)?level.content:[];const now=Date.now(),passed=now>new Date(level.closes_at).getTime();const[completed,setCompleted]=useState(new Set()),[feedbackDay,setFeedbackDay]=useState(null);useEffect(()=>{if(!user)return;supabase.from('progress').select('lesson_id').eq('user_id',user.id).eq('course_id','da').then(({data})=>setCompleted(new Set((data||[]).map(x=>x.lesson_id))))},[user?.id,level.id]);const finish=async(dayId,day)=>{try{await completeLesson(user.id,'da',dayId);setCompleted(v=>new Set([...v,dayId]));setFeedbackDay(day)}catch{}};const state=current?'current':passed?'ended':'locked';return <div className={'card level-card '+state}><div className="level-top"><div className="level-index"><span className="level-number">{String(level.journey_number||level.level_number).padStart(2,'0')}</span><span className="level-label">WEEK</span></div><span className={'level-status '+state}>{current?'CURRENT':passed?'ENDED':'LOCKED'}</span></div><div className="level-title-row"><div><h2>{level.title}</h2>{current&&<p className="level-summary">{level.description}</p>}</div>{!current&&<span className="lock-glyph">{passed?'✓':'🔒'}</span>}</div>{current?<><div className="level-window"><span>{fmt(level.opens_at)}</span><span>·</span><span>{fmt(level.closes_at)}</span></div>{content.length>0&&<div className="level-lessons">{content.slice(0,5).map((x,i)=><article className={'lesson-row lesson-day '+(completed.has(x.id)?'done':'')} key={x.id||i}><span><b>Day {i+1} · {x.title}</b><small>{x.minutes||30} min</small></span>{user&&<button className="mini-action" disabled={completed.has(x.id)} onClick={()=>finish(x.id||('journey-'+level.journey_number+'-day-'+(i+1)),i+1)}>{completed.has(x.id)?'Completed':'Mark class complete'}</button>}</article>)}</div>}{<QuizList levelId={level.id}/>} {feedbackDay&&<DailyFeedback level={level} day={feedbackDay} onClose={()=>setFeedbackDay(null)}/>}</>:<div className="locked-note">{passed?'This week has ended.':'Available when the cohort reaches this week.'}</div>}</div>}
+const READING_VIDEOS={
+  1:[
+    {title:'What Does a Data Analyst Actually Do?',id:'ywZXpfdqg1o'},
+    {title:'Qualitative and Quantitative Data',id:'5rUVYWfZOb8'},
+    {title:'Complete Data Analyst Roadmap',id:'UTMuL_86gSQ'}
+  ],
+  2:[
+    {title:'Qualitative and Quantitative Data',id:'dwFsRZv4oHA'},
+    {title:'What Does a Data Analyst Actually Do?',id:'ywZXpfdqg1o'},
+    {title:'Exploratory Data Analysis in Pandas',id:'rK8V0JzQ5d8'}
+  ],
+  3:[
+    {title:'Complete Data Analyst Roadmap',id:'UTMuL_86gSQ'},
+    {title:'Exploratory Data Analysis in Pandas',id:'rK8V0JzQ5d8'},
+    {title:'What Does a Data Analyst Actually Do?',id:'ywZXpfdqg1o'}
+  ]
+};
+
+const READING_CONTENT={
+  1:[
+    {title:'What is data analysis?',intro:'Data analysis begins with a simple idea: raw observations become useful when we examine them, organize them and interpret what they tell us.',sections:[
+      ['Data and information','A value by itself may be only a piece of data. Its meaning becomes clearer when we place it in context. For example, a number such as 1,099 is a data value; a statement explaining what that number represents turns it into useful information.'],
+      ['Why analysts work with data','Organizations collect numbers, words, images and other records because they need evidence for planning and decisions. An analyst helps turn those records into findings that can be understood and acted upon.'],
+      ['A useful starting question','Before looking at a dataset, ask what decision the analysis is meant to support. A clear purpose helps determine what data matters, what comparisons are useful and what should be ignored.']
+    ]},
+    {title:'From raw data to a useful finding',intro:'The first beginner skill is learning to distinguish a value from the meaning we can responsibly draw from it.',sections:[
+      ['Context matters','The same value can mean different things in different settings. Always identify what was measured, who or what was measured, when it was recorded and what the unit or category represents.'],
+      ['Patterns are clues','Sorting, grouping and displaying data can reveal differences and patterns. These patterns are a starting point for investigation, not automatically a conclusion.'],
+      ['Analyst mindset','Do not rush from an observation to a claim. Describe what the data shows first, then ask what could explain the pattern and what additional evidence would strengthen the conclusion.']
+    ]},
+    {title:'Your first analyst habit',intro:'Good analysis is systematic. The goal is not to make data look complicated; it is to make the evidence easier to understand.',sections:[
+      ['Work from a question','Start with a question that can actually be answered with available evidence.'],
+      ['Keep evidence visible','Record the source, time period, categories and assumptions used in the analysis.'],
+      ['Explain the result','A useful finding should be understandable to someone who did not perform the analysis.']
+    ]}
+  ],
+  2:[
+    {title:'Qualitative and quantitative data',intro:'A dataset can contain numbers, words, descriptions and other forms of evidence. Two foundational categories are quantitative and qualitative data.',sections:[
+      ['Quantitative data','Quantitative data is expressed numerically. It can represent counts, measurements or values assigned to categories. Examples include age, revenue, number of customers and temperature.'],
+      ['Qualitative data','Qualitative data is commonly represented through words or narrative descriptions. Interviews, open-ended responses, notes and observations can provide this kind of evidence.'],
+      ['Neither is automatically better','The appropriate type depends on the question. In some analyses, numerical and descriptive evidence can complement each other and provide a stronger understanding.']
+    ]},
+    {title:'Recognising data types',intro:'Being able to identify the form of evidence you have is an important first step before choosing an analysis method.',sections:[
+      ['Ask what the value represents','A number may be a measurement, a count or a category code. Do not assume that every number should be treated as a measurable quantity.'],
+      ['Look at the collection method','A survey response, interview transcript and transaction table may require different ways of organizing and interpreting the evidence.'],
+      ['Combine evidence carefully','When qualitative and quantitative evidence are combined, keep their different meanings clear rather than forcing everything into one format.']
+    ]},
+    {title:'Practice: classify before analysing',intro:'Before you calculate anything, classify the evidence and explain why that classification makes sense.',sections:[
+      ['Example','“Monthly sales were ₦450,000” is quantitative. “Customers described the service as slow” is qualitative. A customer survey can contain both kinds.'],
+      ['Your task','Take five pieces of information from an everyday business situation and label each as quantitative, qualitative or mixed. Then explain what question each could help answer.']
+    ]}
+  ],
+  3:[
+    {title:'Four useful analysis strategies',intro:'The handbook introduces several beginner-friendly strategies that create an organised route into analysis.',sections:[
+      ['Visualising data','A chart or other visual display can make differences easier to see. Visualisation is a useful starting point, but the visual itself is not the complete analysis.'],
+      ['Exploratory analysis','Exploration looks closely at data when you do not yet know enough about a pattern or indicator. It helps establish what appears to be happening and what questions deserve further attention.'],
+      ['Trend analysis','Trend analysis compares observations across time to identify whether something is increasing, decreasing or changing at a particular rate.'],
+      ['Estimation','Estimation uses available evidence to form a reasoned projection about a value that is not directly available.']
+    ]},
+    {title:'Choosing a strategy',intro:'Different questions call for different approaches. The analyst should choose a method because it helps answer the question, not because it looks sophisticated.',sections:[
+      ['Start simple','If you need to understand differences, begin with sorting, grouping or visualisation.'],
+      ['Look for change','If the question is about movement over time, compare equivalent periods and look for a consistent pattern.'],
+      ['Know the limits','A pattern in a chart is evidence for further investigation. It does not automatically establish why the pattern occurred.']
+    ]},
+    {title:'Mini analysis exercise',intro:'Use a small table of weekly sales and practise selecting an appropriate strategy.',sections:[
+      ['Visualise','Create a simple chart of weekly sales.'],
+      ['Explore','Identify the highest and lowest weeks and describe what stands out.'],
+      ['Trend','Compare the first half of the period with the second half.'],
+      ['Explain','Write two sentences describing what the data supports and one question that still needs investigation.']
+    ]}
+  ],
+  4:[
+    {title:'Data analysis is a process',intro:'Analysis is more than performing calculations. It connects purpose, questions, evidence, methods and interpretation.',sections:[
+      ['Purpose','Define what the analysis is intended to help accomplish.'],
+      ['Questions','Turn the purpose into questions that the available evidence can address.'],
+      ['Data and methods','Identify the relevant evidence and select procedures that fit the question and data type.'],
+      ['Findings and interpretation','Describe the pattern, interpret what it may mean and communicate the result clearly.'],
+      ['Evaluation','Review whether the analysis answered the original question and what should be improved next time.']
+    ]},
+    {title:'A linear view and a cycle',intro:'A project can be planned as a sequence, but real analysis often sends the analyst back to earlier steps.',sections:[
+      ['Linear view','Purpose → questions → data → analysis → findings → reporting. This is useful for planning the work.'],
+      ['Cyclical view','A finding can reveal a new question. A new question may require additional data or a different method. Analysis therefore often becomes an iterative process.']
+    ]},
+    {title:'Build an analysis brief',intro:'A short analysis brief forces you to make the purpose and evidence explicit.',sections:[
+      ['Write the question','State one decision or problem the analysis will support.'],
+      ['List the evidence','Name the fields or observations you would need.'],
+      ['Choose a method','Explain why a table, chart, comparison or other method fits the question.'],
+      ['State the expected output','Describe what a useful finding would look like.']
+    ]}
+  ],
+  5:[
+    {title:'Visualising and interpreting data',intro:'A visual display can help an analyst see structure in a dataset, but interpretation still requires careful reasoning.',sections:[
+      ['Organise before displaying','Sorting or grouping values can make differences easier to understand before choosing a chart.'],
+      ['Use the visual as evidence','A chart should help the reader see a comparison, distribution or change. It should not exaggerate or hide important context.'],
+      ['Describe before explaining','First state what the visual shows. Then consider possible reasons and what additional evidence would be needed.']
+    ]},
+    {title:'From observation to finding',intro:'A strong beginner analysis separates observation from interpretation.',sections:[
+      ['Observation','“Sales were higher in the final three weeks than in the first three weeks.”'],
+      ['Interpretation','The difference may indicate growth, seasonality, a campaign effect or another factor. The data alone may not establish which explanation is correct.'],
+      ['Next question','Ask what additional information could distinguish between those explanations.']
+    ]},
+    {title:'Week 1 checkpoint',intro:'Bring the week together by analysing a small dataset from start to finish.',sections:[
+      ['Step 1','State the purpose and the question.'],
+      ['Step 2','Identify whether the evidence is quantitative, qualitative or mixed.'],
+      ['Step 3','Organise the data and choose a suitable analysis strategy.'],
+      ['Step 4','Describe the main pattern without overclaiming.'],
+      ['Step 5','Write a short finding and one follow-up question.']
+    ]}
+  ]
+};
+
+function CourseReading({level,day,user,onComplete}){
+ const[open,setOpen]=useState(false);
+ const journey=Number(level.journey_number||level.level_number||1);
+ const dayNo=Number(day||1);
+ const content=(READING_CONTENT[journey]||READING_CONTENT[1])[Math.min(dayNo-1,2)];
+ const videos=READING_VIDEOS[journey]||READING_VIDEOS[1];
+ const complete=async()=>{if(onComplete)await onComplete();setOpen(false)};
+ useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=prev}},[open]);
+ return <>
+  <button className="reading-start" onClick={()=>setOpen(true)}><span><b>Start topic reading</b><small>Read the lesson and watch the recommended videos</small></span><strong>↗</strong></button>
+  {open&&<div className="reading-backdrop" role="presentation" onClick={e=>e.target===e.currentTarget&&setOpen(false)}>
+   <article className="reading-sheet" role="dialog" aria-modal="true" aria-label={content.title}>
+    <header className="reading-head"><div><span className="eyebrow">WEEK {journey} · DAY {dayNo}</span><h1>{content.title}</h1></div><button className="reading-close" onClick={()=>setOpen(false)} aria-label="Close reading">×</button></header>
+    <div className="reading-scroll"><p className="reading-intro">{content.intro}</p>{content.sections.map(([h,p],i)=><section className="reading-section" key={i}><h2>{h}</h2><p>{p}</p></section>)}<div className="reading-videos"><div className="section-head"><div><span className="eyebrow">WATCH NEXT</span><h2>Recommended videos</h2></div></div>{videos.map(v=><div className="reading-video" key={v.id}><div className="video-frame"><iframe src={'https://www.youtube.com/embed/'+v.id} title={v.title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/></div><b>{v.title}</b></div>)}</div></div>
+    <footer className="reading-foot"><button className="btn o" onClick={()=>setOpen(false)}>Keep reading later</button>{user&&<button className="btn reading-complete" onClick={complete}>Mark as completed</button>}</footer>
+   </article>
+  </div>}
+ </>
+}
+
+function LevelCard({level,user,current}){const content=Array.isArray(level.content)?level.content:[];const now=Date.now(),passed=now>new Date(level.closes_at).getTime();const[completed,setCompleted]=useState(new Set()),[feedbackDay,setFeedbackDay]=useState(null);useEffect(()=>{if(!user)return;supabase.from('progress').select('lesson_id').eq('user_id',user.id).eq('course_id','da').then(({data})=>setCompleted(new Set((data||[]).map(x=>x.lesson_id))))},[user?.id,level.id]);const finish=async(dayId,day)=>{try{await completeLesson(user.id,'da',dayId);setCompleted(v=>new Set([...v,dayId]));setFeedbackDay(day)}catch{}};const state=current?'current':passed?'ended':'locked';return <div className={'card level-card '+state}><div className="level-top"><div className="level-index"><span className="level-number">{String(level.journey_number||level.level_number).padStart(2,'0')}</span><span className="level-label">WEEK</span></div><span className={'level-status '+state}>{current?'CURRENT':passed?'ENDED':'LOCKED'}</span></div><div className="level-title-row"><div><h2>{level.title}</h2>{current&&<p className="level-summary">{level.description}</p>}</div>{!current&&<span className="lock-glyph">{passed?'✓':'🔒'}</span>}</div>{current?<><div className="level-window"><span>{fmt(level.opens_at)}</span><span>·</span><span>{fmt(level.closes_at)}</span></div>{content.length>0&&<div className="level-lessons">{content.slice(0,5).map((x,i)=><article className={'lesson-row lesson-day '+(completed.has(x.id)?'done':'')} key={x.id||i}><div className="lesson-main"><span><b>Day {i+1} · {x.title}</b><small>{x.minutes||30} min</small></span>{completed.has(x.id)&&<span className="lesson-done">COMPLETED</span>}</div><CourseReading level={level} day={i+1} user={user} onComplete={async()=>finish(x.id||('journey-'+level.journey_number+'-day-'+(i+1)),i+1)}/></article>)}</div>}{<QuizList levelId={level.id}/>} {feedbackDay&&<DailyFeedback level={level} day={feedbackDay} onClose={()=>setFeedbackDay(null)}/>}</>:<div className="locked-note">{passed?'This week has ended.':'Available when the cohort reaches this week.'}</div>}</div>}
 
 function Enroll({user,profile}){const[f,setF]=useState({full_name:profile?.full_name||'',phone:profile?.phone||'',date_of_birth:profile?.date_of_birth||'',gender:profile?.gender||'',country:profile?.country||'Nigeria',state_region:profile?.state_region||'',city:profile?.city||'',address:profile?.address||'',education_level:profile?.education_level||'',institution:profile?.institution||'',emergency_contact_name:profile?.emergency_contact_name||'',emergency_contact_phone:profile?.emergency_contact_phone||'',code:''}),[step,setStep]=useState(1),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[done,setDone]=useState(null),nav=useNavigate();useEffect(()=>{if(!user)nav('/login')},[user,nav]);if(!user)return null;const change=k=>e=>setF(v=>({...v,[k]:e.target.value}));const next=()=>{setMsg('');if(step===1&&!f.full_name.trim())return setMsg('Enter your full name.');if(step===2&&(!f.phone||!f.country||!f.state_region||!f.city||!f.address))return setMsg('Complete your contact and location details.');if(step===3&&!f.education_level)return setMsg('Select your education level.');setStep(Math.min(4,step+1))};const submit=async()=>{if(!f.code.trim())return setMsg('Enter your course submission key.');setBusy(true);setMsg('');try{await completeEnrollmentProfile(f);const{data,error}=await supabase.rpc('redeem_enrollment_key',{p_course_id:'da',p_code:f.code.trim()});if(error)throw error;const snap=await supabase.rpc('student_enrollment_snapshot',{p_course_id:'da'});setDone({...data,...(snap.data||{})});setStep(5)}catch(e){setMsg(e.message||'Enrollment could not be completed.')}finally{setBusy(false)}};return <section className="sec enrollment-page"><div className="hero inner"><p className="eyebrow">Data Analysis · Student enrollment</p><h1>Become a TAMP student</h1><p className="lead">A structured enrollment process like a serious school: identity, contact, location, education and enrollment authorization.</p><div className="progress-track"><i style={{width:(step===5?100:step*25)+'%'}}/></div><span className="mu">Step {Math.min(step,4)} of 4</span></div>{step===5&&done?<div className="card success-card"><div className="success-icon"><Icon name="shield" size={30}/></div><h1>Enrollment confirmed</h1><p>Your enrollment code was accepted. Your course access is being prepared.</p><div className="stats"><div><b>#{done.rank||'—'}</b><span>your cohort rank</span></div><div><b>{done.enrolled||0}</b><span>students enrolled</span></div><div><b>{f.country||'—'}</b><span>your country</span></div></div><div className="countdown"><EnrollmentCountdown unlockAt={done.unlock_at} /></div><p className="mu">Access unlocks automatically after the five-minute processing period. You do not need to submit the key again.</p><Link className="btn" to="/learn">Go to my learning</Link></div>:<div className="card enroll-form">{step===1&&<><h2>About you</h2><label>Full legal name</label><input value={f.full_name} onChange={change('full_name')} placeholder="Full name"/><label>Date of birth</label><input type="date" value={f.date_of_birth} onChange={change('date_of_birth')}/><label>Gender</label><select value={f.gender} onChange={change('gender')}><option value="">Select</option><option>Female</option><option>Male</option><option>Prefer not to say</option></select></>}{step===2&&<><h2>Contact details</h2><label>Phone number</label><input value={f.phone} onChange={change('phone')} placeholder="+234…"/><label>Country</label><input value={f.country} onChange={change('country')} placeholder="Country"/><label>State / region</label><input value={f.state_region} onChange={change('state_region')} placeholder="State"/><label>City</label><input value={f.city} onChange={change('city')} placeholder="City"/><label>Residential address</label><textarea value={f.address} onChange={change('address')} placeholder="Address"/></>}{step===3&&<><h2>Education</h2><label>Education</label><select value={f.education_level} onChange={change('education_level')}><option value="">Select</option><option>Secondary school</option><option>Undergraduate</option><option>Graduate</option><option>Postgraduate</option><option>Other</option></select><label>School / institution</label><input value={f.institution} onChange={change('institution')} placeholder="Institution name"/><label>Emergency contact</label><input value={f.emergency_contact_name} onChange={change('emergency_contact_name')} placeholder="Optional"/><label>Emergency contact phone</label><input value={f.emergency_contact_phone} onChange={change('emergency_contact_phone')} placeholder="Optional"/></>}{step===4&&<><h2>Enrollment confirmation</h2><p>Course fee: <b>₦2,000</b>. Once online payment is available, you will pay the ₦2,000 course fee securely and continue with enrollment.</p><a className="btn o" href="https://wa.me/2349067231466?text=Hello%20TAMP%2C%20I%20want%20to%20purchase%20the%20Data%20Analysis%20course%20submission%20key." target="_blank" rel="noreferrer">Contact TAMP about enrollment</a><label>Enrollment code</label><input value={f.code} onChange={change('code')} placeholder="Enter your enrollment code" autoCapitalize="characters"/><p className="mu">Your enrollment code can only be used once. After it is accepted, the system waits five minutes before unlocking the course.</p></>}{msg&&<div className="auth-error">{msg}</div>}<div className="form-actions">{step>1&&<button className="btn o" onClick={()=>setStep(step-1)}>Back</button>}{step<4?<button className="btn" onClick={next}>Continue</button>:<button className="btn" disabled={busy} onClick={submit}>{busy?'Processing…':'Complete enrollment'}</button>}</div></div>}</section>}
 function EnrollmentCountdown({unlockAt}){const[left,setLeft]=useState(Math.max(0,new Date(unlockAt)-Date.now()));useEffect(()=>{const t=setInterval(()=>setLeft(Math.max(0,new Date(unlockAt)-Date.now())),1000);return()=>clearInterval(t)},[unlockAt]);const m=Math.floor(left/60000),s=Math.floor(left/1000)%60;if(left<=0)return <span className="ok">Your access is ready. Refreshing your learning space…</span>;return <><b>{m}:{String(s).padStart(2,'0')}</b><span>preparing your learning space</span></>}
