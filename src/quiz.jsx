@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState}from'react';
-import{Link,useParams}from'react-router-dom';
+import{Link,useNavigate,useParams}from'react-router-dom';
 import{supabase}from'./lib/supabase.js';
 
 const fmt=d=>d?new Date(d).toLocaleString('en-NG',{dateStyle:'medium',timeStyle:'short'}):'—';
@@ -12,7 +12,7 @@ export function QuizList({levelId}){
 }
 
 function QuizPage(){
- const{quizId}=useParams(),[data,setData]=useState(null),[answers,setAnswers]=useState({}),[busy,setBusy]=useState(true),[msg,setMsg]=useState(''),[left,setLeft]=useState(null),[result,setResult]=useState(null);
+ const{quizId}=useParams(),nav=useNavigate(),[data,setData]=useState(null),[answers,setAnswers]=useState({}),[busy,setBusy]=useState(true),[msg,setMsg]=useState(''),[left,setLeft]=useState(null),[result,setResult]=useState(null);
  const submittedRef=useRef(false);
  const load=async()=>{setBusy(true);setMsg('');try{
   await supabase.rpc('release_my_due_quiz_results');
@@ -23,7 +23,7 @@ function QuizPage(){
  useEffect(()=>{load()},[quizId]);
  const elapsed=useMemo(()=>data?.attempt?Math.max(0,Math.floor((Date.now()-new Date(data.attempt.started_at).getTime())/1000)):0,[data,left]);
  const submit=async auto=>{if(!data?.attempt||data.attempt.status!=='in_progress')return;setBusy(true);setMsg('');
-  try{const fn=data.quiz.kind==='graded'?'submit_graded_quiz':'submit_practice_quiz';const r=await supabase.rpc(fn,{p_attempt_id:data.attempt.id,p_answers:answers,p_pacing_seconds:elapsed});if(r.error)throw r.error;submittedRef.current=true;setResult(r.data?.score_percent??null);setData(v=>({...v,attempt:{...v.attempt,status:r.data?.status,score_percent:r.data?.score_percent,release_at:r.data?.release_at}}));setMsg(auto?'Time expired. Your answers were submitted.':'Submitted successfully.')}catch(e){submittedRef.current=false;setMsg(e.message||'Could not submit quiz.')}finally{setBusy(false)}};
+  try{const fn=data.quiz.kind==='graded'?'submit_graded_quiz':'submit_practice_quiz';const r=await supabase.rpc(fn,{p_attempt_id:data.attempt.id,p_answers:answers,p_pacing_seconds:elapsed});if(r.error)throw r.error;submittedRef.current=true;const fresh=await supabase.rpc('get_student_quiz',{p_quiz_id:quizId});if(fresh.error)throw fresh.error;setData(fresh.data);setResult(r.data?.score_percent??null);setMsg(auto?'Time expired. Your answers were submitted.':'Submitted successfully.')}catch(e){submittedRef.current=false;setMsg(e.message||'Could not submit quiz.')}finally{setBusy(false)}};
  useEffect(()=>{if(!data?.attempt||data.attempt.status!=='in_progress')return;
   const started=new Date(data.attempt.started_at).getTime(),limit=data.quiz.time_limit_minutes?data.quiz.time_limit_minutes*60*1000:null;
   const tick=()=>{const elapsedNow=Date.now()-started;setLeft(limit?Math.max(0,limit-elapsedNow):null);if(limit&&elapsedNow>=limit&&!submittedRef.current){submit(true)}};
@@ -39,8 +39,8 @@ function QuizPage(){
  if(msg&&!data)return <section className="sec"><div className="card"><p className="err">{msg}</p><Link className="btn" to="/learn">Back to learning</Link></div></section>;
  if(!data)return null;const a=data.attempt;
  if(a?.status==='interrupted')return <section className="sec"><div className="card quiz-locked"><span className="pill">Attempt interrupted</span><h1>Quiz not submitted</h1><p>You left the graded quiz page. This attempt has been invalidated and cannot be submitted.</p><p className="mu">This is part of TAMP's assessment integrity rule.</p><Link className="btn" to="/learn">Back to learning</Link></div></section>;
- if(a?.status==='submitted_pending')return <section className="sec"><div className="card success-card"><h1>Submitted</h1><p>Your graded quiz has been received. The result will be released after 24 hours.</p><p className="mu">Result release: {fmt(a.release_at)}</p><Link className="btn" to="/grades">Go to Grades</Link></div></section>;
- if(a?.status==='released')return <section className="sec"><div className="card success-card"><span className="pill">Result released</span><h1>{Number(a.score_percent||0).toFixed(2)}%</h1><p>{data.quiz.title}</p><Link className="btn" to="/grades">View Grades</Link></div></section>;
+ if(a?.status==='submitted_pending')return <section className="sec"><div className="card success-card"><h1>Submitted</h1><p>Your graded quiz is being finalized.</p><button className="btn" onClick={load}>Refresh result</button></div></section>;
+ if(a?.status==='released')return <section className="sec quiz-result-page"><div className="hero inner"><p className="eyebrow">RESULT</p><h1>{Number(a.score_percent||0).toFixed(2)}%</h1><p className="lead">{data.quiz.title} · {data.questions.length} questions</p></div><div className="card success-card"><h2>Answer review</h2><p className="mu">Your correct answer and explanation are shown below so you can learn from the assessment.</p>{data.questions.map((q,i)=><article className="answer-review" key={q.id}><span>Question {i+1}</span><h3>{q.prompt}</h3><p><b>Correct answer:</b> {q.correct_option}</p>{q.explanation&&<p className="mu">{q.explanation}</p>}</article>)}<div className="form-actions"><button className="btn" onClick={async()=>{setBusy(true);try{const r=await supabase.rpc('complete_quiz_topic',{p_attempt_id:a.id});if(r.error)throw r.error;nav('/learn')}catch(e){setMsg(e.message)}finally{setBusy(false)}}}>{busy?'Saving…':'Mark today completed'}</button><Link className="btn o" to="/grades">View Grades</Link></div>{msg&&<p className="status">{msg}</p>}</div></section>
  return <section className="sec quiz-page"><div className="hero inner"><p className="eyebrow">{data.quiz.kind==='graded'?'GRADED QUIZ':'PRACTICE QUIZ'}</p><h1>{data.quiz.title}</h1><p className="lead">{data.quiz.instructions}</p>{timer&&<div className="quiz-timer"><b>{timer}</b><span>remaining</span></div>}</div><div className="card quiz-rules"><b>Assessment rule</b><p>Stay on this page until you submit. Switching away, closing the page or leaving the quiz records an interruption.</p></div><div className="card">{data.questions.map(q=><div className="quiz-question" key={q.id}><small>Question {q.question_number} · {q.points} point{q.points===1?'':'s'}</small><h3>{q.prompt}</h3>{q.options.map(option=><label className="quiz-option" key={option}><input type="radio" name={q.id} checked={answers[q.id]===option} onChange={()=>setAnswers(v=>({...v,[q.id]:option}))}/><span>{option}</span></label>)}</div>)}<button className="btn" disabled={busy||data.questions.some(q=>!answers[q.id])} onClick={()=>submit(false)}>{busy?'Submitting your answers…':'Submit answers'}</button>{msg&&<p className="status">{msg}</p>}{result!=null&&data.quiz.kind==='practice'&&<div className="result"><b>Practice result: {Number(result).toFixed(2)}%</b><p>Practice activities help you learn and are not included in your official academic results.</p></div>}</div></section>;
 }
 
