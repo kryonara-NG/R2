@@ -47,7 +47,7 @@ function QuizPage(){
 export function GradeTile(){
  const[s,setS]=useState({average_percent:0,graded_count:0,fast_attempts:0});
  useEffect(()=>{supabase.rpc('release_my_due_quiz_results').then(()=>supabase.rpc('get_my_grade_summary')).then(({data})=>data&&setS(data))},[]);
- return <Link className="grade-tile" to="/grades"><span><small>QUIZ PERFORMANCE</small><b>{Number(s.average_percent||0).toFixed(2)}%</b></span><span><strong>{s.graded_count||0}</strong><small>graded quizzes</small></span></Link>;
+ return <Link className="grade-tile" to="/grades"><span><small>OVERALL PERCENTAGE</small><b>{Number(s.average_percent||0).toFixed(2)}%</b></span><span><strong>{s.graded_count||0}</strong><small>graded quizzes</small></span></Link>;
 }
 
 export function Grades({user}){

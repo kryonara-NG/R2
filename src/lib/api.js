@@ -25,9 +25,24 @@ export async function completeLesson(userId,courseId,lessonId){
   if(error) throw error;
 }
 export async function getAssignments(courseId){
-  const {data,error}=await supabase.from('assignments').select('*').eq('course_id',courseId).order('week_number').order('created_at');
+  const {data,error}=await supabase.from('assignments').select('*').eq('course_id',courseId).order('week_number').order('day_number').order('created_at');
   if(error) throw error;
   return data||[];
+}
+export async function completeEnrollmentProfile(form){
+  const {data,error}=await supabase.rpc('complete_my_enrollment_profile',{p_full_name:form.full_name,p_phone:form.phone,p_date_of_birth:form.date_of_birth||null,p_gender:form.gender||null,p_country:form.country,p_state_region:form.state_region,p_city:form.city,p_address:form.address,p_education_level:form.education_level,p_institution:form.institution||null,p_emergency_contact_name:form.emergency_contact_name||null,p_emergency_contact_phone:form.emergency_contact_phone||null});
+  if(error) throw error;
+  return data;
+}
+export async function updateMyProfile(form){
+  const {data,error}=await supabase.rpc('update_my_profile',{p_full_name:form.full_name,p_phone:form.phone,p_date_of_birth:form.date_of_birth||null,p_gender:form.gender||null,p_country:form.country,p_state_region:form.state_region,p_city:form.city,p_address:form.address,p_education_level:form.education_level,p_institution:form.institution||null,p_emergency_contact_name:form.emergency_contact_name||null,p_emergency_contact_phone:form.emergency_contact_phone||null});
+  if(error) throw error;
+  return data;
+}
+export async function submitDailyFeedback({courseId,journeyNumber,dayNumber,rating,comment}){
+  const {data,error}=await supabase.rpc('submit_daily_feedback',{p_course_id:courseId,p_journey_number:journeyNumber,p_day_number:dayNumber,p_rating:rating,p_comment:comment});
+  if(error) throw error;
+  return data;
 }
 export async function getMySubmissions(userId){
   const {data,error}=await supabase.from('submissions').select('*, assignments(*), assessment_results(*)').eq('student_id',userId).order('submitted_at',{ascending:false});
