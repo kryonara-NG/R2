@@ -12,4 +12,4 @@ Disallow: /quiz
 Disallow: /settings
 Disallow: /auth/
 
-Sitemap: https://r2-kryonara1.vercel.app/sitemap.xml
+Sitemap: https://r2-swff.vercel.app/sitemap.xml
