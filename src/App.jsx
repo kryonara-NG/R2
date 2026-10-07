@@ -177,7 +177,7 @@ function CourseReading({level,day,user,onComplete}){
  const[open,setOpen]=useState(false);
  const journey=Number(level.journey_number||level.level_number||1);
  const dayNo=Number(day||1);
- const content=(READING_CONTENT[journey]||READING_CONTENT[1])[Math.min(dayNo-1,2)];
+ const content=(READING_CONTENT[journey]||READING_CONTENT[1])[Math.min(dayNo-1,(READING_CONTENT[journey]||READING_CONTENT[1]).length-1)];
  const videos=READING_VIDEOS[journey]||READING_VIDEOS[1];
  const complete=async()=>{if(onComplete)await onComplete();setOpen(false)};
  useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=prev}},[open]);
