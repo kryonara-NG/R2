@@ -85,6 +85,17 @@ const READING_CONTENT={
       ['Work from a question','Start with a question that can actually be answered with available evidence.'],
       ['Keep evidence visible','Record the source, time period, categories and assumptions used in the analysis.'],
       ['Explain the result','A useful finding should be understandable to someone who did not perform the analysis.']
+    ]},
+    {title:'Working with real-world data',intro:'Data can arrive in many forms. Before analysing it, learn to recognise what each observation represents.',sections:[
+      ['Different forms','Data may appear as numbers, words, images, maps, records or other observations. The format does not remove the need for context.'],
+      ['Raw versus meaningful','A raw value becomes more useful when it is connected to its definition, source and purpose.'],
+      ['Prepare before calculating','Check labels, units, missing values and time periods before performing calculations or making comparisons.']
+    ]},
+    {title:'Week 1 review',intro:'The first week is about building the habits that make later technical analysis reliable.',sections:[
+      ['Remember','Data is evidence; information is data interpreted in context.'],
+      ['Distinguish','Quantitative evidence is numerical; qualitative evidence is commonly descriptive or narrative.'],
+      ['Question','A good analysis begins with purpose and questions rather than with a chart or calculation.'],
+      ['Apply','Choose one everyday dataset and write its purpose, three questions it could answer, the data types involved and one possible finding.']
     ]}
   ],
   2:[
