@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Keep compatibility with the environment variable names configured on Vercel.
+const url = import.meta.env.SUPABASE_URL;
+const publishableKey = import.meta.env.Pub_key;
 
 if (!url || !publishableKey) {
   throw new Error(
-    'Missing Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.'
+    'Missing Supabase configuration. Set SUPABASE_URL and Pub_key.'
   );
 }
 
