@@ -6,6 +6,7 @@ import Landing,{StudentVoices}from'./landing.jsx';
 import QuizPage,{QuizList,Grades,GradeTile}from'./quiz.jsx';
 import{Handbook,Transcript}from'./handbook.jsx';
 import Payment from'./payment.jsx';
+import Seo from'./seo.jsx';
 import'./styles.css';
 
 const Icon=({name,size=21})=>{const p={viewBox:'0 0 24 24',width:size,height:size,fill:'none',stroke:'currentColor',strokeWidth:1.9,strokeLinecap:'round',strokeLinejoin:'round'};const x={home:<><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></>,book:<><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5.5v14A2.5 2.5 0 0 1 6.5 17H20"/></>,learn:<><path d="M4 5h16v12H4z"/><path d="m8 21 4-4 4 4"/></>,user:<><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,shield:<><path d="M12 3 20 6v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-5"/></>,bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,moon:<><path d="M20 15.5A8 8 0 1 1 8.5 4 8 8 0 0 0 20 15.5z"/></>,sun:<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2"/></>};return <svg className="i" {...p}>{x[name]||x.home}</svg>};
