@@ -212,13 +212,13 @@ const READING_CONTENT={
 };
 
 function CourseReading({level,day,user}){ 
- const[open,setOpen]=useState(false),[quizId,setQuizId]=useState(null),[quizPrompt,setQuizPrompt]=useState(false),[quizLoading,setQuizLoading]=useState(false);
+ const[open,setOpen]=useState(false),[quizId,setQuizId]=useState(null),[quizPrompt,setQuizPrompt]=useState(false),[quizLoading,setQuizLoading]=useState(false),[readingCompleted,setReadingCompleted]=useState(false);
  const nav=useNavigate(),journey=Number(level.journey_number||level.level_number||1),dayNo=Number(day||1);
  const content=(READING_CONTENT[journey]||READING_CONTENT[1])[Math.min(dayNo-1,(READING_CONTENT[journey]||READING_CONTENT[1]).length-1)];
  const videos=READING_VIDEOS[journey]||READING_VIDEOS[1];
  const storageKey=`tamp-reading-${user?.id||'guest'}-${level.id}-day-${dayNo}`;
  const saveScroll=e=>{if(user)localStorage.setItem(storageKey,String(Math.round(e.currentTarget.scrollTop)))};
- const openReading=async()=>{setOpen(true);setQuizPrompt(false);setQuizLoading(true);try{const{data}=await supabase.from('quizzes').select('id').eq('course_level_id',level.id).eq('day_number',dayNo).eq('kind','graded').eq('active',true).maybeSingle();setQuizId(data?.id||null)}finally{setQuizLoading(false)}};
+ const openReading=async()=>{setOpen(true);setQuizPrompt(false);setQuizLoading(true);try{const[{data:q},{data:p}]=await Promise.all([supabase.from('quizzes').select('id').eq('course_level_id',level.id).eq('day_number',dayNo).eq('kind','graded').eq('active',true).maybeSingle(),supabase.from('progress').select('completed_at').eq('user_id',user?.id).eq('course_id','da').eq('lesson_id',content.id||('journey-'+journey+'-day-'+dayNo)).maybeSingle()]);setQuizId(q?.id||null);setReadingCompleted(Boolean(p?.completed_at))}finally{setQuizLoading(false)}};
  useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';requestAnimationFrame(()=>{const el=document.querySelector('[data-reading-scroll="true"]');if(el){const saved=Number(localStorage.getItem(storageKey)||0);el.scrollTop=saved}});return()=>{document.body.style.overflow=prev}},[open,storageKey]);
  const beginQuiz=()=>{if(quizId)nav('/quiz/'+quizId);else setQuizPrompt(false)};
  return <>
@@ -233,8 +233,8 @@ function CourseReading({level,day,user}){
       <div className="reading-videos"><div className="section-head"><div><span className="eyebrow">VIDEO STUDY</span><h2>Watch alongside the reading</h2><p className="mu">Use the videos to reinforce the ideas in this topic. Return to the reading after each one.</p></div></div>{videos.map(v=><div className="reading-video" key={v.id}><div className="video-frame"><iframe src={'https://www.youtube.com/embed/'+v.id} title={v.title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/></div><b>{v.title}</b></div>)}</div>
       <section className="reading-section reading-finish"><h2>Before you take today's assessment</h2><p>Review the headings above, make sure you can explain the key ideas without looking at the page, and then use the button below. Completing the reading does not by itself mark the day complete. Your graded daily quiz is the final academic check for this topic.</p></section>
     </div>
-    <footer className="reading-foot"><button className="btn o" onClick={()=>setOpen(false)}>Save and return later</button><button className="btn reading-complete" disabled={quizLoading} onClick={()=>setQuizPrompt(true)}>{quizLoading?'Preparing today’s quiz…':quizId?'Take today’s quiz':'Quiz not available yet'}</button></footer>
-    {quizPrompt&&<div className="reading-quiz-prompt"><div className="reading-quiz-card"><span className="pill">TODAY'S ASSESSMENT</span><h2>Ready to take today's quiz?</h2><p>This is a timed graded assessment based on this reading. Your question order and answer-option order are randomized for your attempt.</p><div className="form-actions"><button className="btn o" onClick={()=>setQuizPrompt(false)}>Keep reading</button><button className="btn" disabled={!quizId} onClick={beginQuiz}>Take quiz now →</button></div></div></div>}
+    <footer className="reading-foot"><button className="btn o" onClick={()=>setOpen(false)}>Save and return later</button><button className="btn reading-complete" disabled={quizLoading||!quizId} onClick={()=>setQuizPrompt(true)}>{quizLoading?'Preparing today’s quiz…':readingCompleted?'Continue to today’s quiz':quizId?'Mark reading as completed':'Quiz not available yet'}</button></footer>
+    {quizPrompt&&<div className="reading-quiz-prompt"><div className="reading-quiz-card"><span className="pill">TODAY'S ASSESSMENT</span><h2>Ready to take today's quiz?</h2><p>This is a timed graded assessment based strictly on this topic reading. Your question order and answer-option order are randomized for your attempt. Your lesson is marked academically complete only after the graded quiz is submitted and successfully finalized.</p><div className="form-actions"><button className="btn o" onClick={()=>setQuizPrompt(false)}>Keep reading</button><button className="btn" disabled={!quizId} onClick={beginQuiz}>Take quiz now →</button></div></div></div>}
    </article>
   </div>}
  </>
