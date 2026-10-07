@@ -6,9 +6,9 @@ const fmt=d=>d?new Date(d).toLocaleString('en-NG',{dateStyle:'medium',timeStyle:
 
 export function QuizList({levelId}){
  const[items,setItems]=useState([]);
- useEffect(()=>{supabase.from('quizzes').select('id,title,kind,time_limit_minutes').eq('course_level_id',levelId).eq('active',true).order('kind').then(({data})=>setItems(data||[]))},[levelId]);
+ useEffect(()=>{(async()=>{const{data:level}=await supabase.from('course_levels').select('opens_at').eq('id',levelId).maybeSingle();if(!level)return;const day=Math.max(1,Math.floor((Date.now()-new Date(level.opens_at).getTime())/86400000)+1);const{data}=await supabase.from('quizzes').select('id,title,kind,time_limit_minutes,day_number').eq('course_level_id',levelId).eq('active',true).eq('day_number',day).order('kind');setItems(data||[])})()},[levelId]);
  if(!items.length)return null;
- return <div className="quiz-list"><h3>Quizzes</h3>{items.map(q=><Link className="quiz-link" key={q.id} to={'/quiz/'+q.id}><span><b>{q.title}</b><small>{q.kind==='graded'?'Graded · result released after 24 hours':'Practice · immediate feedback'}{q.time_limit_minutes?' · '+q.time_limit_minutes+' min':''}</small></span><strong>→</strong></Link>)}</div>;
+ return <div className="quiz-list"><h3>Today's assessment</h3>{items.map(q=><Link className="quiz-link" key={q.id} to={'/quiz/'+q.id}><span><b>{q.title}</b><small>{q.kind==='graded'?'Graded · result available immediately':'Practice · immediate feedback'}{q.time_limit_minutes?' · '+q.time_limit_minutes+' min':''}</small></span><strong>→</strong></Link>)}</div>;
 }
 
 function QuizPage(){
