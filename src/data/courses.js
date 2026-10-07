@@ -5,6 +5,6 @@ export const COURSES=[{
   title:'Data Analysis',
   tag:'Data',
   level:'Beginner → Intermediate → Advanced',
-  duration:'3 levels · 5-day submission windows',
+  duration:'Cohort-based · approximately 1–2 months · five-day learning journeys',
   desc:'A practical program that takes learners from data fundamentals to Python/pandas and a real business analysis project.'
 }];
