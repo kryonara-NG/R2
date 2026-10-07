@@ -60,11 +60,11 @@ const READING_VIDEOS={
   2:[
     {title:'Qualitative and Quantitative Data',id:'dwFsRZv4oHA'},
     {title:'What Does a Data Analyst Actually Do?',id:'ywZXpfdqg1o'},
-    {title:'Exploratory Data Analysis in Pandas',id:'rK8V0JzQ5d8'}
+    {title:'Exploratory Data Analysis in Pandas',id:'Liv6eeb1VfE'}
   ],
   3:[
     {title:'Complete Data Analyst Roadmap',id:'UTMuL_86gSQ'},
-    {title:'Exploratory Data Analysis in Pandas',id:'rK8V0JzQ5d8'},
+    {title:'Exploratory Data Analysis in Pandas',id:'Liv6eeb1VfE'},
     {title:'What Does a Data Analyst Actually Do?',id:'ywZXpfdqg1o'}
   ]
 };
