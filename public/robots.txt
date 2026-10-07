@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /learn
+Disallow: /profile
+Disallow: /notifications
+Disallow: /admin
+Disallow: /enroll
+Disallow: /transcript
+Disallow: /grades
+Disallow: /assignments
+Disallow: /quiz
+Disallow: /settings
+Disallow: /auth/
+
+Sitemap: https://r2-kryonara1.vercel.app/sitemap.xml
