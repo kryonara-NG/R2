@@ -13,9 +13,9 @@ export const supabaseConfig = {
   ].filter(Boolean),
 };
 
-if (!supabaseConfig.url || !supabaseConfig.publishableKey) {
-  // Keep the failure explicit instead of silently rendering a blank application.
-  throw new Error('Missing Supabase configuration: ' + supabaseConfig.missing.join(', '));
-}
-
-export const supabase = createClient(supabaseConfig.url, supabaseConfig.publishableKey);
+// Keep the app renderable even if Vercel has not injected a variable yet.
+// API calls will fail visibly rather than causing a completely blank page.
+export const supabase = createClient(
+  supabaseConfig.url || 'https://invalid.supabase.co',
+  supabaseConfig.publishableKey || 'missing-publishable-key'
+);
