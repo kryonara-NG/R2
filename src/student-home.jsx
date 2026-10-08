@@ -15,7 +15,7 @@ export default function StudentHome({user,profile}){
  const[loading,setLoading]=useState(true),[en,setEn]=useState(null),[levels,setLevels]=useState([]),[progress,setProgress]=useState([]),[assignments,setAssignments]=useState([]),[grade,setGrade]=useState({average_percent:0,graded_count:0}),[notifications,setNotifications]=useState(0),[todayQuiz,setTodayQuiz]=useState(null);
  useEffect(()=>{let alive=true;(async()=>{try{
    await supabase.rpc('activate_due_enrollments',{p_course_id:'da'});
-   const[a,l,p,as,ss,g,n]=await Promise.all([
+   const[a,l,p,as,g,n]=await Promise.all([
     getEnrollment(user.id,'da'),
     supabase.from('course_levels').select('*').eq('course_id','da').order('level_number'),
     getProgress(user.id,'da'),
