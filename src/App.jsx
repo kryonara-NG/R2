@@ -65,7 +65,7 @@ const READING_VIDEOS={
   ],
   3:[
     {title:'Complete Data Analyst Roadmap',id:'UTMuL_86gSQ'},
-    {title:'Exploratory Data Analysis in Pandas',id:'Liv6eeb1VfE'},
+    {title:'Data vs Information',id:'vXPExp844Yo'},
     {title:'What Does a Data Analyst Actually Do?',id:'ywZXpfdqg1o'}
   ]
 };
