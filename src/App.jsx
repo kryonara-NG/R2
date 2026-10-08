@@ -266,6 +266,7 @@ function CourseReading({level,day,user}){
  const fallbackContent=(READING_CONTENT[journey]||READING_CONTENT[1])[Math.min(dayNo-1,(READING_CONTENT[journey]||READING_CONTENT[1]).length-1)];
  const[dbContent,setDbContent]=useState(null);
  const content=dbContent||fallbackContent;
+ const canComplete=readingAtEnd||readingCompleted;
  const videos=dbContent?.videos?.length?dbContent.videos.map(v=>({title:v.title,id:videoId(v.url)||v.id})):READING_VIDEOS[journey]||READING_VIDEOS[1];
  const storageKey=`tamp-reading-${user?.id||'guest'}-${level.id}-day-${dayNo}`;
  const saveScroll=e=>{if(!user)return;const top=Math.round(e.currentTarget.scrollTop);setReadingAtEnd(e.currentTarget.scrollTop+e.currentTarget.clientHeight>=e.currentTarget.scrollHeight-48);localStorage.setItem(storageKey,String(top));setSavedScroll(top);clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>{supabase.rpc('save_topic_reading_position',{p_course_id:'da',p_course_level_id:level.id,p_day_number:dayNo,p_scroll_top:top}).then(()=>{})},700)};
