@@ -1,7 +1,7 @@
 import React,{useEffect,useMemo,useState}from'react';
 import{Link}from'react-router-dom';
 import{supabase}from'./lib/supabase.js';
-import{getEnrollment,getProgress,getAssignments,getMySubmissions}from'./lib/api.js';
+import{getEnrollment,getProgress,getAssignments}from'./lib/api.js';
 
 const Icon=({name,size=20})=>{const p={viewBox:'0 0 24 24',width:size,height:size,fill:'none',stroke:'currentColor',strokeWidth:1.9,strokeLinecap:'round',strokeLinejoin:'round'};const x={book:<><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5.5v14A2.5 2.5 0 0 1 6.5 17H20"/></>,check:<><path d="m5 12 4 4L19 6"/></>,quiz:<><path d="M4 5h16v12H4z"/><path d="m8 21 4-4 4 4"/></>,arrow:<><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>,lock:<><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>,bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>};return <svg className="i" {...p}>{x[name]||x.arrow}</svg>};
 
@@ -12,7 +12,7 @@ const clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
 function streakFromProgress(rows){const days=new Set((rows||[]).filter(x=>x.completed_at).map(x=>dayKey(x.completed_at)));let cursor=new Date();let streak=0;while(true){const k=dayKey(cursor);if(!days.has(k))break;streak++;cursor.setDate(cursor.getDate()-1)}return streak}
 
 export default function StudentHome({user,profile}){
- const[loading,setLoading]=useState(true),[en,setEn]=useState(null),[levels,setLevels]=useState([]),[progress,setProgress]=useState([]),[assignments,setAssignments]=useState([]),[subs,setSubs]=useState([]),[grade,setGrade]=useState({average_percent:0,graded_count:0}),[notifications,setNotifications]=useState(0),[todayQuiz,setTodayQuiz]=useState(null);
+ const[loading,setLoading]=useState(true),[en,setEn]=useState(null),[levels,setLevels]=useState([]),[progress,setProgress]=useState([]),[assignments,setAssignments]=useState([]),[grade,setGrade]=useState({average_percent:0,graded_count:0}),[notifications,setNotifications]=useState(0),[todayQuiz,setTodayQuiz]=useState(null);
  useEffect(()=>{let alive=true;(async()=>{try{
    await supabase.rpc('activate_due_enrollments',{p_course_id:'da'});
    const[a,l,p,as,ss,g,n]=await Promise.all([
@@ -20,12 +20,11 @@ export default function StudentHome({user,profile}){
     supabase.from('course_levels').select('*').eq('course_id','da').order('level_number'),
     getProgress(user.id,'da'),
     getAssignments('da'),
-    getMySubmissions(user.id),
     supabase.rpc('get_my_grade_summary'),
     supabase.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',user.id).is('read_at',null)
    ]);
    if(!alive)return;
-   setEn(a);setLevels(l.data||[]);setProgress(p);setAssignments(as);setSubs(ss);setGrade(g.data||{average_percent:0,graded_count:0});setNotifications(n.count||0);
+   setEn(a);setLevels(l.data||[]);setProgress(p);setAssignments(as);setGrade(g.data||{average_percent:0,graded_count:0});setNotifications(n.count||0);
   }catch{}finally{if(alive)setLoading(false)}})();return()=>{alive=false}},[user.id]);
  const completed=new Set(progress.map(x=>x.lesson_id));
  const current=useMemo(()=>{const now=Date.now();const active=levels.find(l=>now>=new Date(l.opens_at).getTime()&&now<=new Date(l.closes_at).getTime());return active||levels.find(l=>(Array.isArray(l.content)?l.content:[]).some(x=>!completed.has(x.id)))||levels[0]||null},[levels,progress]);
