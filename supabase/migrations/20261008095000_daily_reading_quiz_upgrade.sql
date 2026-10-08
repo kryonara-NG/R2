@@ -76,3 +76,7 @@ where kind='graded' and day_number between 1 and 4;
 
 update public.quizzes set time_limit_minutes=30
 where kind='graded' and day_number=5;
+
+-- Keep the daily assessment bank at the intended size.
+delete from public.quiz_questions where quiz_id in (select id from public.quizzes where kind='graded' and day_number between 1 and 4) and question_number>15;
+delete from public.quiz_questions where quiz_id in (select id from public.quizzes where kind='graded' and day_number=5) and question_number>25;
