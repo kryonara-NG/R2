@@ -270,7 +270,7 @@ function CourseReading({level,day,user}){
  useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';requestAnimationFrame(()=>{const el=document.querySelector('[data-reading-scroll="true"]');if(el){const saved=Number(localStorage.getItem(storageKey)||savedScroll||0);el.scrollTop=saved}});return()=>{document.body.style.overflow=prev}},[open,storageKey,savedScroll]);
  const beginQuiz=()=>{if(quizId)nav('/quiz/'+quizId);else setQuizPrompt(false)}; const markReadingComplete=async()=>{if(!quizId||quizLoading)return;setQuizLoading(true);try{const{error}=await supabase.rpc('complete_topic_reading',{p_course_id:'da',p_course_level_id:level.id,p_day_number:dayNo});if(error)throw error;setReadingCompleted(true);setQuizPrompt(true)}catch(e){alert(e.message||'Could not save your reading completion.')}finally{setQuizLoading(false)}};
  return <>
-  <button className="reading-start" onClick={openReading}><span><b>Start topic reading</b><small>Deep reading · about 30 minutes · videos included</small></span><strong>↗</strong></button>
+  <button className="reading-start" onClick={openReading}><span><b>Start topic reading</b><small>Deep study · about 30 minutes · reading + videos</small></span><strong>↗</strong></button>
   {open&&<div className="reading-backdrop" role="presentation" onClick={e=>e.target===e.currentTarget&&setOpen(false)}>
    <article className="reading-sheet" role="dialog" aria-modal="true" aria-label={content.title}>
     <header className="reading-head"><div><span className="eyebrow">WEEK {journey} · DAY {dayNo} · ~30 MIN</span><h1>{content.title}</h1></div><button className="reading-close" onClick={()=>setOpen(false)} aria-label="Close reading">×</button></header>
